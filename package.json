@@ -1,0 +1,27 @@
+{
+  "name": "yathu-pubg-store",
+  "version": "1.0.0",
+  "description": "Complete MERN stack website for YATHU PUBG STORE - PUBG account selling business",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": [
+    "MERN",
+    "PUBG",
+    "gaming",
+    "ecommerce",
+    "react",
+    "node",
+    "mongodb"
+  ],
+  "author": "YATHU PUBG STORE",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
