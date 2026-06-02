@@ -11,10 +11,6 @@ router.get('/', async (req, res) => {
       limit = 12,
       search,
       status = 'available',
-      rank,
-      server,
-      minPrice,
-      maxPrice,
       minLevel,
       maxLevel,
       sortBy = 'createdAt',
@@ -33,23 +29,6 @@ router.get('/', async (req, res) => {
     // Featured filter
     if (featured === 'true') {
       query.featured = true;
-    }
-    
-    // Rank filter
-    if (rank && rank !== 'all') {
-      query.rank = rank;
-    }
-    
-    // Server filter
-    if (server && server !== 'all') {
-      query.server = server;
-    }
-    
-    // Price range filter
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
     }
     
     // Level range filter

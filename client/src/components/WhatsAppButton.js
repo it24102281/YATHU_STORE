@@ -1,40 +1,50 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 
 const WhatsAppButton = () => {
-  const whatsappNumber = '+94763442220';
-  const whatsappMessage = 'Hi! I\'m interested in buying a PUBG account from YATHU PUBG STORE.';
-
-  const handleWhatsAppClick = () => {
-    const url = `https://wa.me/${whatsappNumber.replace('+', '')}?text=${encodeURIComponent(whatsappMessage)}`;
-    window.open(url, '_blank');
-  };
+  const [hovered, setHovered] = useState(false);
+  const url = `https://wa.me/94763442220?text=${encodeURIComponent("Hi! I'm interested in buying a gaming account from Yathu Official.")}`;
 
   return (
-    <motion.button
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20, delay: 1 }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={handleWhatsAppClick}
-      className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg border-2 border-green-400 transition-colors group"
-      aria-label="Contact on WhatsApp"
-    >
-      <MessageCircle className="w-6 h-6 text-green-100" />
-      
+    <div className="fixed bottom-7 right-7 z-50 flex flex-col items-end gap-3">
       {/* Tooltip */}
-      <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        <div className="bg-gray-900 text-white text-sm px-3 py-2 rounded-lg whitespace-nowrap">
-          Chat on WhatsApp
-          <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-        </div>
-      </div>
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, x: 10, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 10, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="px-4 py-2.5 rounded-2xl text-sm font-semibold text-white pointer-events-none"
+            style={{ background: 'rgba(17,17,17,0.95)', border: '1px solid rgba(34,197,94,0.3)', backdropFilter: 'blur(12px)', whiteSpace: 'nowrap', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
+          >
+            💬 Chat with us
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Pulse animation */}
-      <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75"></span>
-    </motion.button>
+      {/* Button */}
+      <motion.a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chat with us on WhatsApp"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 1.2 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.92 }}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
+        className="relative w-15 h-15 flex items-center justify-center rounded-full"
+        style={{ width: 60, height: 60, background: 'linear-gradient(135deg, #22c55e, #16a34a)', boxShadow: '0 8px 32px rgba(34,197,94,0.4)' }}
+      >
+        <MessageCircle className="w-7 h-7 text-white" />
+        {/* Pulse ring */}
+        <span className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(34,197,94,0.35)', animationDuration: '2s' }} />
+      </motion.a>
+    </div>
   );
 };
 

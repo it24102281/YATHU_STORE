@@ -1,165 +1,293 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Gamepad2, AlertCircle, RefreshCw, TrendingUp } from 'lucide-react';
+import {
+  Users,
+  Box,
+  ShoppingCart,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  Loader,
+  CheckCircle,
+  Clock
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import axios from 'axios';
 
 const AdminDashboard = () => {
-  const { getAuthHeaders, api } = useAuth();
-  const [stats, setStats] = useState({
-    totalAccounts: 0,
-    activeAccounts: 0,
-    soldAccounts: 0,
-    totalContacts: 0
-  });
+  const { api } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    completedOrders: 0
+  });
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentProducts, setRecentProducts] = useState([]);
 
-  const fetchStats = async () => {
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      setError(null);
-      // We simulate stats fetching since no dedicated stats endpoint exists yet, 
-      // or we can try to fetch counts from existing endpoints if available.
-      // For now, let's fetch accounts and contacts to count them.
 
-      const headers = getAuthHeaders();
-      const [accountsRes, contactsRes] = await Promise.all([
-        api.get('/accounts', { headers }).catch(() => ({ data: { data: [] } })),
-        api.get('/contacts', { headers }).catch(() => ({ data: { data: [] } }))
-      ]);
+      // Fetch users
+      const usersRes = await api.get('/users').catch(() => ({ data: { users: [] } }));
+      const users = usersRes.data.users || [];
 
-      const accounts = accountsRes.data.data || [];
-      const contacts = contactsRes.data.data || [];
+      // Fetch products
+      const productsRes = await api.get('/products').catch(() => ({ data: { products: [] } }));
+      const products = productsRes.data.products || [];
+
+      // Fetch orders
+      const ordersRes = await api.get('/orders').catch(() => ({ data: { orders: [] } }));
+      const orders = ordersRes.data.orders || [];
+
+      const totalRevenue = orders
+        .filter(o => o.status === 'completed')
+        .reduce((sum, o) => sum + o.totalPrice, 0);
+
+      const pendingOrders = orders.filter(o => o.status === 'pending').length;
+      const completedOrders = orders.filter(o => o.status === 'completed').length;
 
       setStats({
-        totalAccounts: accounts.length,
-        activeAccounts: accounts.filter(a => a.status === 'Available').length,
-        soldAccounts: accounts.filter(a => a.status === 'Sold').length,
-        totalContacts: contacts.length
+        totalUsers: users.length,
+        totalProducts: products.length,
+        totalOrders: orders.length,
+        totalRevenue: totalRevenue.toFixed(2),
+        pendingOrders,
+        completedOrders
       });
-    } catch (err) {
-      console.error('Failed to fetch dashboard stats', err);
-      // Fallback
+
+      setRecentOrders(orders.slice(0, 5));
+      setRecentProducts(products.slice(0, 5));
+    } catch (error) {
+      console.error('Failed to fetch dashboard data', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
   const statCards = [
     {
-      title: 'Total Accounts',
-      value: stats.totalAccounts,
-      icon: Gamepad2,
-      color: 'from-purple-500 to-purple-700',
-      lightColor: 'bg-purple-500/10 text-purple-400'
-    },
-    {
-      title: 'Available',
-      value: stats.activeAccounts,
-      icon: TrendingUp,
-      color: 'from-green-500 to-emerald-700',
-      lightColor: 'bg-green-500/10 text-green-400'
-    },
-    {
-      title: 'Sold',
-      value: stats.soldAccounts,
+      title: 'Total Users',
+      value: stats.totalUsers,
       icon: Users,
-      color: 'from-blue-500 to-indigo-700',
-      lightColor: 'bg-blue-500/10 text-blue-400'
+      color: 'from-blue-600 to-blue-700',
+      bg: 'bg-blue-500/10'
     },
     {
-      title: 'Contacts',
-      value: stats.totalContacts,
-      icon: AlertCircle,
-      color: 'from-orange-500 to-red-700',
-      lightColor: 'bg-orange-500/10 text-orange-400'
+      title: 'Total Products',
+      value: stats.totalProducts,
+      icon: Box,
+      color: 'from-purple-600 to-purple-700',
+      bg: 'bg-purple-500/10'
+    },
+    {
+      title: 'Total Orders',
+      value: stats.totalOrders,
+      icon: ShoppingCart,
+      color: 'from-pink-600 to-pink-700',
+      bg: 'bg-pink-500/10'
+    },
+    {
+      title: 'Total Revenue',
+      value: `$${stats.totalRevenue}`,
+      icon: DollarSign,
+      color: 'from-green-600 to-green-700',
+      bg: 'bg-green-500/10'
+    }
+  ];
+
+  const orderStats = [
+    {
+      label: 'Completed Orders',
+      value: stats.completedOrders,
+      icon: CheckCircle,
+      color: 'text-green-400'
+    },
+    {
+      label: 'Pending Orders',
+      value: stats.pendingOrders,
+      icon: Clock,
+      color: 'text-yellow-400'
     }
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600">
-            Dashboard Overview
-          </h1>
-          <p className="text-gray-400 mt-1">
-            Welcome back to the YATHU admin panel
-          </p>
-        </div>
-
-        <button
-          onClick={fetchStats}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Stats
-        </button>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-black text-white">Dashboard</h1>
+        <p className="text-gray-400 mt-2">Welcome to your admin control panel</p>
       </div>
 
+      {/* Stats Cards */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-32 bg-white/5 border border-white/10 rounded-2xl animate-pulse" />
-          ))}
+        <div className="flex items-center justify-center py-12">
+          <Loader className="w-8 h-8 text-purple-400 animate-spin" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((stat, i) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-[#111] border border-white/5 rounded-2xl p-6 relative overflow-hidden group"
-            >
-              <div className={`absolute top-0 right-0 p-4 opacity-10 blur-xl w-32 h-32 bg-gradient-to-br ${stat.color} rounded-full -mr-16 -mt-16 transition-opacity group-hover:opacity-20`} />
-
-              <div className="relative z-10 flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400 mb-1">
-                    {stat.title}
-                  </p>
-                  <h3 className="text-4xl font-black text-white">
-                    {stat.value}
-                  </h3>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {statCards.map((card, index) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`${card.bg} border border-gray-700 rounded-lg p-6 hover:border-purple-500/50 transition-colors`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`bg-gradient-to-br ${card.color} p-3 rounded-lg`}>
+                    <card.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <TrendingUp className="w-5 h-5 text-green-400" />
                 </div>
+                <p className="text-gray-400 text-sm font-medium mb-1">{card.title}</p>
+                <p className="text-4xl font-black text-white">{card.value}</p>
+              </motion.div>
+            ))}
+          </div>
 
-                <div className={`p-3 rounded-xl ${stat.lightColor}`}>
-                  <stat.icon className="w-6 h-6" />
+          {/* Order Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {orderStats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+                className="bg-gray-800/30 border border-gray-700 rounded-lg p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm font-medium">{stat.label}</p>
+                    <p className="text-3xl font-black text-white mt-2">{stat.value}</p>
+                  </div>
+                  <stat.icon className={`w-12 h-12 ${stat.color}`} />
                 </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Recent Orders */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-gray-800/30 border border-gray-700 rounded-lg p-6"
+          >
+            <h2 className="text-xl font-bold text-white mb-4">Recent Orders</h2>
+            {recentOrders.length === 0 ? (
+              <p className="text-gray-400">No orders yet</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left px-4 py-3 text-gray-300 font-bold">Order ID</th>
+                      <th className="text-left px-4 py-3 text-gray-300 font-bold">Customer</th>
+                      <th className="text-left px-4 py-3 text-gray-300 font-bold">Amount</th>
+                      <th className="text-left px-4 py-3 text-gray-300 font-bold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentOrders.map((order) => (
+                      <tr key={order._id} className="border-b border-gray-700 hover:bg-gray-900/30">
+                        <td className="px-4 py-3 text-gray-300 font-mono text-sm">{order.orderNumber?.substring(0, 12)}...</td>
+                        <td className="px-4 py-3 text-white">{order.user?.username || 'Guest'}</td>
+                        <td className="px-4 py-3 text-white font-bold">${order.totalPrice}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            order.status === 'completed' ? 'bg-green-500/20 text-green-300' :
+                            order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                            order.status === 'processing' ? 'bg-blue-500/20 text-blue-300' :
+                            'bg-red-500/20 text-red-300'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </motion.div>
-          ))}
-        </div>
+            )}
+          </motion.div>
+
+          {/* Recent Products */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="bg-gray-800/30 border border-gray-700 rounded-lg p-6"
+          >
+            <h2 className="text-xl font-bold text-white mb-4">Recently Added Products</h2>
+            {recentProducts.length === 0 ? (
+              <p className="text-gray-400">No products yet</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentProducts.map((product) => (
+                  <div
+                    key={product._id}
+                    className="bg-gray-900/50 border border-gray-600 rounded-lg p-4 hover:border-purple-500/50 transition-colors"
+                  >
+                    <h3 className="text-white font-bold mb-2">{product.name}</h3>
+                    <p className="text-gray-400 text-sm mb-3">{product.description?.substring(0, 60)}...</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-purple-400 font-bold">${product.price}</span>
+                      <span className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-xs font-medium">
+                        Stock: {product.stock}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+            className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-lg p-6"
+          >
+            <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <a
+                href="/admin/inventory"
+                className="bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+              >
+                Add Product
+              </a>
+              <a
+                href="/admin/orders"
+                className="bg-pink-600/30 hover:bg-pink-600/50 text-pink-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+              >
+                View Orders
+              </a>
+              <a
+                href="/admin/finance"
+                className="bg-green-600/30 hover:bg-green-600/50 text-green-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+              >
+                Finance
+              </a>
+              <a
+                href="/admin/offers"
+                className="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+              >
+                Manage Offers
+              </a>
+            </div>
+          </motion.div>
+        </>
       )}
-
-      {/* Placeholders for future charts or recent activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-[#111] border border-white/5 rounded-2xl p-6 min-h-[400px] flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
-          <div className="text-center relative z-10">
-            <Gamepad2 className="w-12 h-12 text-purple-500/30 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-300">Sales Analytics</h3>
-            <p className="text-gray-500 mt-2">Chart integration coming soon</p>
-          </div>
-        </div>
-
-        <div className="bg-[#111] border border-white/5 rounded-2xl p-6 min-h-[400px] flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-tl from-purple-500/5 to-transparent pointer-events-none" />
-          <div className="text-center relative z-10">
-            <Users className="w-12 h-12 text-purple-500/30 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-300">Recent Activity</h3>
-            <p className="text-gray-500 mt-2">Activity feed coming soon</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

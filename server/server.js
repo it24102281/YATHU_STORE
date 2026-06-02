@@ -30,6 +30,7 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api/accounts', require('./routes/accounts'));
+app.use('/api/uc-packages', require('./routes/ucPackages'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/contact', require('./routes/contact'));
 

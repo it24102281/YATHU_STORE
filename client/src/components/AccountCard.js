@@ -1,201 +1,222 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { 
-  Star, 
-  Shield, 
-  Trophy, 
-  Zap, 
-  Eye, 
-  ExternalLink,
-  MessageCircle,
-  Crown,
-  Sparkles
-} from 'lucide-react';
+import { Play, MessageCircle, Eye, Star, Crown, Zap, Shield } from 'lucide-react';
+import VideoModal from './VideoModal';
+import { getAutoThumbnail } from '../utils/video';
 
-const AccountCard = ({ account, index }) => {
-  const {
-    _id,
-    title,
-    price,
-    rank,
-    level,
-    skins,
-    gunSkins,
-    server,
-    loginMethod,
-    images,
-    status,
-    views,
-    featured
-  } = account;
+const WHATSAPP_NUMBER = '94763442220';
+const ALL_LOGIN_METHODS = ['Facebook','Google','Twitter','Guest','Any','All Logins Cleared'];
 
-  const getRankColor = (rank) => {
-    const colors = {
-      'Bronze': 'from-purple-600 to-purple-800',
-      'Silver': 'from-gray-400 to-gray-600',
-      'Gold': 'from-yellow-500 to-yellow-700',
-      'Platinum': 'from-cyan-500 to-cyan-700',
-      'Diamond': 'from-blue-500 to-blue-700',
-      'Ace': 'from-purple-500 to-purple-700',
-      'Master': 'from-red-500 to-red-700'
-    };
-    return colors[rank] || 'from-gray-500 to-gray-700';
-  };
+const rankColors = {
+  Bronze:    { bg: 'rgba(180,100,50,0.15)',  border: 'rgba(180,100,50,0.35)',  text: '#cd7f32' },
+  Silver:    { bg: 'rgba(160,160,160,0.15)', border: 'rgba(160,160,160,0.35)', text: '#c0c0c0' },
+  Gold:      { bg: 'rgba(255,200,0,0.15)',   border: 'rgba(255,200,0,0.35)',   text: '#ffd700' },
+  Platinum:  { bg: 'rgba(100,200,220,0.15)', border: 'rgba(100,200,220,0.35)', text: '#7fffd4' },
+  Diamond:   { bg: 'rgba(100,160,255,0.15)', border: 'rgba(100,160,255,0.35)', text: '#87ceeb' },
+  Ace:       { bg: 'rgba(220,60,60,0.15)',   border: 'rgba(220,60,60,0.35)',   text: '#ff6b6b' },
+  Master:    { bg: 'rgba(160,60,220,0.15)',  border: 'rgba(160,60,220,0.35)',  text: '#c084fc' },
+  Conqueror: { bg: 'rgba(255,130,0,0.15)',   border: 'rgba(255,130,0,0.35)',   text: '#ff8c00' },
+};
 
-  const getServerFlag = (server) => {
-    const flags = {
-      'Asia': '🇦🇸',
-      'Europe': '🇪🇺',
-      'America': '🇺🇸',
-      'Korea': '🇰🇷',
-      'Taiwan/Hong Kong/Macau': '🇹🇼'
-    };
-    return flags[server] || '🌍';
-  };
+const categoryIcons = { Standard: Zap, Premium: Star, Elite: Crown, Rare: Shield };
 
-  const handleWhatsAppClick = (e) => {
-    e.preventDefault();
-    const message = `Hi! I'm interested in ${title} account priced at $${price}.`;
-    const url = `https://wa.me/94763442220?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
+const AccountCard = ({ account, index = 0 }) => {
+  const [videoOpen, setVideoOpen] = useState(false);
+
+  const hasVideo = account.videoType && account.videoType !== 'none' && account.videoUrl;
+
+  const thumbnail =
+    account.thumbnailUrl ||
+    (account.videoType === 'youtube' ? getAutoThumbnail('youtube', account.videoUrl) : null) ||
+    (account.images && account.images[0]) ||
+    null;
+
+  const rank = account.rank || 'Bronze';
+  const rankStyle = rankColors[rank] || rankColors.Bronze;
+  const CategoryIcon = categoryIcons[account.category] || Zap;
+
+  const waMessage = encodeURIComponent(
+    `Hi Yathu Official, I want to buy this account:\n${account.title}\nPrice: LKR ${account.price?.toLocaleString()}`
+  );
+  const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMessage}`;
+
+  const displayFeatures = account.features?.length
+    ? account.features.slice(0, 3)
+    : account.skins?.slice(0, 3) || [];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.6 }}
-      whileHover={{ y: -12, scale: 1.02 }}
-      className="thej-card group relative"
-    >
-      {/* Featured Badge */}
-      {featured && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: index * 0.1 + 0.2 }}
-          className="absolute top-4 left-4 z-20"
-        >
-          <div className="badge-thej-featured flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-bold">
-            <Crown className="w-4 h-4" />
-            <span>Featured</span>
-            <Sparkles className="w-4 h-4" />
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.06, duration: 0.4 }}
+        whileHover={{ y: -6 }}
+        className="group relative flex flex-col rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(145deg, rgba(25,25,35,0.95), rgba(15,15,20,0.98))',
+          border: '1px solid rgba(139,92,246,0.15)',
+          transition: 'all 0.35s ease',
+          fontFamily: 'Poppins, sans-serif',
+        }}
+      >
+        <div className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.7), transparent)' }} />
+
+        {/* Thumbnail area */}
+        <div className="relative overflow-hidden" style={{ height: 200 }}>
+          {thumbnail ? (
+            <img
+              src={thumbnail}
+              alt={account.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#1a1028,#0f0a1e)' }}>
+              <div className="text-5xl mb-2">🎮</div>
+              <p className="text-gray-500 text-xs">No preview</p>
+            </div>
+          )}
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,15,20,0.95) 0%, transparent 55%)' }} />
+
+          {/* Status badge */}
+          <div className="absolute top-3 left-3">
+            <span className="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider"
+              style={account.status === 'available'
+                ? { background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.4)', color: '#4ade80' }
+                : { background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }
+              }>
+              {account.status === 'available' ? '✓ Available' : '✗ Sold'}
+            </span>
           </div>
-        </motion.div>
-      )}
 
-      {/* Status Badge */}
-      <div className="absolute top-4 right-4 z-20">
-        <div className={`badge-thej ${status === 'available' ? 'badge-thej-success' : 'badge-thej-danger'} backdrop-blur-md`}>
-          {status === 'available' ? 'Available' : 'Sold'}
-        </div>
-      </div>
+          {account.featured && (
+            <div className="absolute top-3 right-3">
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold"
+                style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', color: '#fff' }}>
+                <Star className="w-3 h-3 fill-current" /> Featured
+              </span>
+            </div>
+          )}
 
-      {/* Image Section */}
-      <div className="relative h-56 overflow-hidden">
-        <img
-          src={images[0] || '/placeholder-account.jpg'}
-          alt={title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-        />
-        
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-        
-        {/* Rank Badge */}
-        <div className="absolute bottom-4 left-4">
-          <div className={`bg-gradient-to-r ${getRankColor(rank)} px-4 py-2 rounded-full text-sm font-bold text-white flex items-center space-x-2 shadow-lg`}>
-            <Trophy className="w-4 h-4" />
-            <span>{rank}</span>
-          </div>
-        </div>
-
-        {/* Views Counter */}
-        <div className="absolute bottom-4 right-4 flex items-center space-x-2 text-white/90 text-sm bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
-          <Eye className="w-4 h-4" />
-          <span>{views}</span>
-        </div>
-
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      </div>
-
-      {/* Content Section */}
-      <div className="p-6 space-y-4">
-        {/* Title */}
-        <h3 className="font-bold text-xl text-white group-hover:text-purple-500 transition-colors line-clamp-2">
-          {title}
-        </h3>
-
-        {/* Price and Server */}
-        <div className="flex items-center justify-between">
-          <div className="text-3xl font-black gradient-text">
-            ${price}
-          </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">
-            <span>{getServerFlag(server)}</span>
-            <span>{server}</span>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center space-x-2 text-sm text-gray-300 bg-gray-800/30 px-3 py-2 rounded-lg">
-            <Zap className="w-4 h-4 text-purple-500" />
-            <span>Level {level}</span>
-          </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-300 bg-gray-800/30 px-3 py-2 rounded-lg">
-            <Shield className="w-4 h-4 text-blue-500" />
-            <span>{loginMethod}</span>
-          </div>
-        </div>
-
-        {/* Items Preview */}
-        {(skins.length > 0 || gunSkins.length > 0) && (
-          <div className="space-y-2 pt-2 border-t border-gray-800">
-            {skins.length > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Rare Skins</span>
-                <span className="text-purple-500 font-semibold">{skins.length}</span>
-              </div>
-            )}
-            {gunSkins.length > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Gun Skins</span>
-                <span className="text-purple-500 font-semibold">{gunSkins.length}</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex space-x-3 pt-4">
-          <Link
-            to={`/account/${_id}`}
-            className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center space-x-2 group/btn"
-          >
-            <ExternalLink className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-            <span>View Details</span>
-          </Link>
-          
-          {status === 'available' && (
+          {/* Play overlay on hover */}
+          {hasVideo && (
             <button
-              onClick={handleWhatsAppClick}
-              className="flex-1 btn-thej-primary py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center space-x-2 group/btn"
+              onClick={() => setVideoOpen(true)}
+              className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{ background: 'rgba(0,0,0,0.3)' }}
             >
-              <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-              <span>Buy Now</span>
+              <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(139,92,246,0.9)', backdropFilter: 'blur(8px)' }}>
+                <Play className="w-6 h-6 text-white fill-current ml-0.5" />
+              </div>
             </button>
           )}
-        </div>
-      </div>
 
-      {/* Floating Glow Effect */}
-      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/20 to-purple-600/20 blur-xl"></div>
-      </div>
-    </motion.div>
+          <div className="absolute bottom-3 left-3">
+            <span className="px-2.5 py-1 rounded-lg text-xs font-bold"
+              style={{ background: rankStyle.bg, border: `1px solid ${rankStyle.border}`, color: rankStyle.text }}>
+              {rank}
+            </span>
+          </div>
+          <div className="absolute bottom-3 right-3">
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold"
+              style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.35)', color: '#c084fc' }}>
+              <CategoryIcon className="w-3 h-3" />
+              {account.category || 'Standard'}
+            </span>
+          </div>
+        </div>
+
+        {/* Card body */}
+        <div className="flex flex-col flex-1 p-5 gap-4">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-white font-bold text-base leading-snug line-clamp-2 flex-1">{account.title}</h3>
+            <div className="text-right flex-shrink-0">
+              <div className="font-black text-lg" style={{ color: '#a855f7' }}>
+                LKR {account.price?.toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          {displayFeatures.length > 0 && (
+            <ul className="space-y-1.5">
+              {displayFeatures.map((f, i) => (
+                <li key={i} className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#a855f7' }} />
+                  <span className="truncate">{f}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {account.loginMethods?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_LOGIN_METHODS.every(m => account.loginMethods.includes(m)) ? (
+                <span className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+                  style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: '#c084fc' }}>
+                  ✦ ALL Logins
+                </span>
+              ) : (
+                account.loginMethods.map((m, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-md text-xs font-semibold"
+                    style={m === 'All Logins Cleared'
+                      ? { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }
+                      : { background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: '#a78bfa' }
+                    }>
+                    {m === 'All Logins Cleared' ? '🔓 All Logins Cleared' : m}
+                  </span>
+                ))
+              )}
+            </div>
+          )}
+
+          {account.views > 0 && (
+            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+              <Eye className="w-3.5 h-3.5" />
+              <span>{account.views} views</span>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 mt-auto pt-2">
+            {hasVideo && (
+              <button onClick={() => setVideoOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: '#c084fc' }}>
+                <Play className="w-4 h-4" /> Watch Video
+              </button>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Link to={`/account/${account._id}`}
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e2e8f0' }}>
+                <Eye className="w-3.5 h-3.5" /> Details
+              </Link>
+              <a href={waLink} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5"
+                style={account.status === 'available'
+                  ? { background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', color: '#fff' }
+                  : { background: 'rgba(100,100,100,0.2)', border: '1px solid rgba(100,100,100,0.3)', color: '#6b7280', pointerEvents: 'none' }
+                }>
+                <MessageCircle className="w-3.5 h-3.5" />
+                {account.status === 'available' ? 'Buy Now' : 'Sold'}
+              </a>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      <VideoModal
+        isOpen={videoOpen}
+        onClose={() => setVideoOpen(false)}
+        videoType={account.videoType}
+        videoUrl={account.videoUrl}
+        title={account.title}
+      />
+    </>
   );
 };
 

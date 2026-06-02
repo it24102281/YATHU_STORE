@@ -113,11 +113,11 @@ export const AuthProvider = ({ children }) => {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
 
-        const res = await api.get('/admin/verify');
+        const res = await api.get('/auth/verify');
 
         dispatch({
           type: 'LOAD_USER_SUCCESS',
-          payload: res.data.data.admin
+          payload: res.data.user
         });
       } catch (err) {
         dispatch({
@@ -135,11 +135,14 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
 
-      const res = await api.post('/admin/login', { email, password });
+      const res = await api.post('/auth/admin-login', { email, password });
 
       dispatch({
         type: 'LOGIN_SUCCESS',
-        payload: res.data.data
+        payload: {
+          token: res.data.token,
+          admin: res.data.user
+        }
       });
 
       return { success: true, data: res.data };
@@ -189,6 +192,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     ...state,
+    user: state.admin,
     login,
     logout,
     loadUser,

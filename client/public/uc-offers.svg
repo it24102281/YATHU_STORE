@@ -1,0 +1,30 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="800" height="400" fill="url(#grad1)"/>
+  
+  <!-- UC Coins Background -->
+  <circle cx="150" cy="100" r="40" fill="rgba(255,215,0,0.3)" stroke="rgba(255,215,0,0.5)" stroke-width="2"/>
+  <text x="150" y="110" font-size="40" font-weight="bold" fill="#FFD700" text-anchor="middle" font-family="Arial">UC</text>
+  
+  <circle cx="650" cy="300" r="50" fill="rgba(255,215,0,0.2)" stroke="rgba(255,215,0,0.4)" stroke-width="2"/>
+  <text x="650" y="315" font-size="50" font-weight="bold" fill="#FFD700" text-anchor="middle" font-family="Arial">UC</text>
+  
+  <!-- Main Text -->
+  <text x="400" y="150" font-size="80" font-weight="bold" fill="#FFFFFF" text-anchor="middle" font-family="Rajdhani, Arial">UC PACKS</text>
+  <text x="400" y="220" font-size="60" font-weight="bold" fill="#FFD700" text-anchor="middle" font-family="Rajdhani, Arial">AVAILABLE</text>
+  
+  <!-- Package Options -->
+  <rect x="100" y="280" width="200" height="90" fill="rgba(0,0,0,0.4)" rx="10" stroke="#FFD700" stroke-width="2"/>
+  <text x="200" y="305" font-size="32" font-weight="bold" fill="#FFFFFF" text-anchor="middle" font-family="Arial">8100 UC</text>
+  <text x="200" y="335" font-size="20" fill="#FFD700" text-anchor="middle" font-family="Arial">Best Deal</text>
+  
+  <rect x="500" y="280" width="200" height="90" fill="rgba(0,0,0,0.4)" rx="10" stroke="#FFD700" stroke-width="2"/>
+  <text x="600" y="305" font-size="32" font-weight="bold" fill="#FFFFFF" text-anchor="middle" font-family="Arial">3850 UC</text>
+  <text x="600" y="335" font-size="20" fill="#FFD700" text-anchor="middle" font-family="Arial">Popular</text>
+</svg>

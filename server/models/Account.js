@@ -1,25 +1,21 @@
 const mongoose = require('mongoose');
 
 const accountSchema = new mongoose.Schema({
-  title: {
+  accountId: {
     type: String,
-    required: [true, 'Account title is required'],
+    required: [true, 'Account ID is required'],
     trim: true,
-    maxlength: [100, 'Title cannot exceed 100 characters']
+    maxlength: [200, 'Account ID cannot exceed 200 characters']
   },
   price: {
-    type: Number,
-    required: [true, 'Price is required'],
-    min: [0, 'Price cannot be negative']
-  },
-  rank: {
     type: String,
-    required: [true, 'Rank is required'],
-    enum: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ace', 'Master']
+    required: [true, 'Price is required'],
+    trim: true,
+    maxlength: [100, 'Price cannot exceed 100 characters']
   },
   level: {
     type: Number,
-    required: [true, 'Level is required'],
+    default: 1,
     min: [1, 'Level must be at least 1'],
     max: [100, 'Level cannot exceed 100']
   },
@@ -31,30 +27,38 @@ const accountSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
-  server: {
-    type: String,
-    required: [true, 'Server is required'],
-    enum: ['Asia', 'Europe', 'America', 'Korea', 'Taiwan/Hong Kong/Macau']
+  features: {
+    type: [String],
+    default: []
   },
-  loginMethod: {
-    type: String,
-    required: [true, 'Login method is required'],
-    enum: ['Facebook', 'Google', 'Twitter', 'Guest']
+  loginMethods: {
+    type: [String],
+    enum: ['Facebook', 'Google', 'Twitter', 'Guest', 'Any'],
+    default: []
   },
   description: {
     type: String,
-    required: [true, 'Description is required'],
-    maxlength: [1000, 'Description cannot exceed 1000 characters']
+    default: '',
+    maxlength: [2000, 'Description cannot exceed 2000 characters']
   },
+  // Video support
+  videoType: {
+    type: String,
+    enum: ['youtube', 'gdrive', 'none'],
+    default: 'none'
+  },
+  videoUrl: {
+    type: String,
+    default: ''
+  },
+  thumbnailUrl: {
+    type: String,
+    default: ''
+  },
+  // Legacy image support
   images: {
     type: [String],
-    required: [true, 'At least one image is required'],
-    validate: {
-      validator: function(images) {
-        return images.length > 0;
-      },
-      message: 'At least one image is required'
-    }
+    default: []
   },
   status: {
     type: String,
@@ -69,31 +73,16 @@ const accountSchema = new mongoose.Schema({
   views: {
     type: Number,
     default: 0
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
 }, {
   timestamps: true
 });
 
-// Index for search functionality
-accountSchema.index({ title: 'text', description: 'text' });
+// Indexes
+accountSchema.index({ accountId: 'text', description: 'text' });
 accountSchema.index({ status: 1 });
 accountSchema.index({ featured: 1 });
 accountSchema.index({ price: 1 });
-accountSchema.index({ rank: 1 });
-accountSchema.index({ level: 1 });
-
-// Update the updatedAt field on save
-accountSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
+accountSchema.index({ category: 1 });
 
 module.exports = mongoose.model('Account', accountSchema);
