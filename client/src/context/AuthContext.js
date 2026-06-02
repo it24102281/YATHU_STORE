@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import axios from 'axios';
 
+const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
+
 // Create context
 const AuthContext = createContext();
 
@@ -81,7 +83,7 @@ const authReducer = (state, action) => {
 
 // API setup
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }

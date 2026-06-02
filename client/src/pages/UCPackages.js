@@ -4,6 +4,7 @@ import { MessageCircle, Zap, Star, Trophy, Package } from 'lucide-react';
 import axios from 'axios';
 
 const WHATSAPP_NUMBER = '94763442220';
+const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
 
 const badgeConfig = {
   'best-deal': { label: 'Best Deal', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)', icon: Trophy },
@@ -201,7 +202,7 @@ const UCPackages = () => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await axios.get('/api/uc-packages?status=available');
+        const res = await axios.get(`${API_BASE_URL}/uc-packages?status=available`);
         setPackages(res.data.data);
       } catch (e) {
         console.error(e);

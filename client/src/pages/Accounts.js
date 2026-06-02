@@ -4,6 +4,8 @@ import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Package } from
 import axios from 'axios';
 import AccountCard from '../components/AccountCard';
 
+const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
+
 const SORT_OPTIONS = [
   { value: 'createdAt-desc', label: 'Newest First' },
   { value: 'createdAt-asc',  label: 'Oldest First' },
@@ -44,7 +46,7 @@ const Accounts = () => {
         ...(status !== 'all' && { status }),
         ...(search.trim() && { search: search.trim() }),
       });
-      const res = await axios.get(`/api/accounts?${params}`);
+      const res = await axios.get(`${API_BASE_URL}/accounts?${params}`);
       setAccounts(res.data.data);
       setPagination(res.data.pagination);
     } catch (e) {
