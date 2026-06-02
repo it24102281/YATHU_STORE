@@ -12,11 +12,16 @@ const badgeConfig = {
 };
 
 const SkeletonCard = () => (
-  <div className="rounded-2xl overflow-hidden animate-pulse"
+  <div className="mx-auto w-full max-w-[360px] rounded-2xl overflow-hidden animate-pulse"
     style={{ background: 'rgba(25,25,35,0.8)', border: '1px solid rgba(139,92,246,0.1)' }}>
-    <div className="p-6 space-y-4">
+    <div className="h-[205px] bg-gray-700/30" />
+    <div className="p-5 space-y-3">
       <div className="h-5 bg-gray-700/60 rounded-lg w-1/2 mx-auto" />
-      <div className="h-10 bg-gray-700/40 rounded-lg w-3/4 mx-auto" />
+      <div className="space-y-2">
+        <div className="h-4 bg-gray-700/40 rounded-lg w-1/2 mx-auto" />
+        <div className="h-4 bg-gray-700/40 rounded-lg w-2/5 mx-auto" />
+        <div className="h-4 bg-gray-700/40 rounded-lg w-1/3 mx-auto" />
+      </div>
       <div className="h-4 bg-gray-700/30 rounded-lg w-2/3 mx-auto" />
       <div className="h-11 bg-gray-700/30 rounded-xl mt-4" />
     </div>
@@ -30,6 +35,7 @@ const UCPackageCard = ({ pkg, index }) => {
   // Support both old ucAmount and new ucAmounts array
   const amounts = pkg.ucAmounts?.length ? pkg.ucAmounts : (pkg.ucAmount ? [pkg.ucAmount] : []);
   const displayAmounts = amounts.map(a => typeof a === 'number' ? `${a.toLocaleString()} UC` : a).join(' + ');
+  const amountLines = amounts.map(a => typeof a === 'number' ? `${a.toLocaleString()} UC` : a);
 
   const waMessage = encodeURIComponent(
     `Hi Yathu Official, I want to buy UC Package:\n${displayAmounts}${pkg.bonus ? ` + ${pkg.bonus}` : ''}\nPrice: ${pkg.price}`
@@ -44,7 +50,7 @@ const UCPackageCard = ({ pkg, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07, duration: 0.4 }}
       whileHover={{ y: -8 }}
-      className="group relative flex flex-col rounded-2xl overflow-hidden text-center"
+      className="group relative mx-auto flex h-full w-full max-w-[360px] flex-col overflow-hidden rounded-2xl text-center"
       style={{
         background: 'linear-gradient(145deg, rgba(25,25,35,0.97), rgba(15,15,22,0.98))',
         border: pkg.badge === 'best-deal'
@@ -54,9 +60,26 @@ const UCPackageCard = ({ pkg, index }) => {
         fontFamily: 'Poppins, sans-serif',
       }}
     >
+      {pkg.badge === 'best-deal' && badge.label && BadgeIcon && (
+        <div className="absolute right-3 top-3 z-10">
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.95), rgba(251,191,36,0.95))',
+              color: '#1f1300',
+              border: '1px solid rgba(255,220,140,0.6)',
+              boxShadow: '0 8px 20px rgba(245,158,11,0.28)',
+            }}
+          >
+            <BadgeIcon className="h-3 w-3" />
+            {badge.label}
+          </span>
+        </div>
+      )}
+
       {pkg.image && (
         <div className="overflow-hidden border-b border-white/10">
-          <img src={pkg.image} alt={displayAmounts || 'UC package'} className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          <img src={pkg.image} alt={displayAmounts || 'UC package'} className="h-[205px] w-full object-cover transition-transform duration-300 group-hover:scale-105" />
         </div>
       )}
 
@@ -69,36 +92,43 @@ const UCPackageCard = ({ pkg, index }) => {
           : 'linear-gradient(90deg, #374151, #4b5563)'
       }} />
 
-      <div className="p-7 flex flex-col flex-1 gap-4">
+      <div className="flex flex-1 flex-col p-5">
 
         {/* Category tag */}
-        <div className="flex justify-center gap-2">
-          <span className="px-2.5 py-1 rounded-lg text-xs font-bold"
-            style={isBonus
-              ? { background: 'rgba(139,92,246,0.15)', color: '#c084fc', border: '1px solid rgba(139,92,246,0.3)' }
-              : { background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }
-            }>
-            {isBonus ? '🎁 Bonus UC' : '🎮 Regular UC'}
-          </span>
-          {badge.label && BadgeIcon && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold"
-              style={{ background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color }}>
-              <BadgeIcon className="w-3 h-3" />{badge.label}
+        {isBonus && (
+          <div className="mb-3 flex justify-center">
+            <span className="rounded-lg px-2.5 py-1 text-xs font-bold"
+              style={{ background: 'rgba(139,92,246,0.15)', color: '#c084fc', border: '1px solid rgba(139,92,246,0.3)' }}>
+              🎁 Bonus UC
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* UC Amount */}
-        <div>
-          <div className="text-4xl font-black mb-1"
-            style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            {displayAmounts || '—'}
+        <div className="mb-4">
+          <div className="space-y-1.5">
+            {amountLines.length > 0 ? amountLines.map((line, amountIndex) => (
+              <div
+                key={`${pkg._id}-amount-${amountIndex}`}
+                className="text-[28px] font-black leading-none sm:text-[32px]"
+                style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+              >
+                {line}
+              </div>
+            )) : (
+              <div
+                className="text-[28px] font-black leading-none sm:text-[32px]"
+                style={{ background: 'linear-gradient(135deg,#a855f7,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+              >
+                —
+              </div>
+            )}
           </div>
         </div>
 
         {/* Bonus */}
         {pkg.bonus && (
-          <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl"
+          <div className="mb-3 flex items-center justify-center gap-2 rounded-xl px-4 py-2"
             style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
             <Zap className="w-4 h-4 text-purple-400" />
             <span className="text-sm font-semibold text-purple-300">{pkg.bonus}</span>
@@ -106,37 +136,37 @@ const UCPackageCard = ({ pkg, index }) => {
         )}
 
         {pkg.description && (
-          <p className="text-sm leading-relaxed text-gray-300">{pkg.description}</p>
+          <p className="mb-3 text-sm leading-relaxed text-gray-300">{pkg.description}</p>
         )}
 
         {/* Top-up method */}
         {pkg.topupMethod === 'tag' && (
-          <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold"
+          <div className="mb-4 flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold"
             style={{ background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)', color: '#fbbf24' }}>
             🏷 Character ID Required
           </div>
         )}
         {pkg.topupMethod === 'login' && (
-          <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold"
+          <div className="mb-4 flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold"
             style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#a5b4fc' }}>
             🔐 Login Required
           </div>
         )}
 
         {/* Price */}
-        <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="mb-4 flex flex-col items-center justify-center">
           {pkg.price === 'Inbox' ? (
-            <div className="text-2xl font-black" style={{ color: '#a855f7' }}>📩 Inbox for Price</div>
+            <div className="text-[22px] font-black leading-[1.2] sm:text-[24px] lg:text-[28px]" style={{ color: '#a855f7' }}>📩 Inbox for Price</div>
           ) : (
             <>
-              <div className="text-3xl font-black text-white mb-1">LKR {pkg.price}</div>
+              <div className="mb-1 text-[24px] font-black leading-tight text-white sm:text-[28px]">LKR {pkg.price}</div>
               <div className="text-gray-500 text-xs">One-time payment</div>
             </>
           )}
         </div>
 
         {/* Status */}
-        <div className="flex justify-center">
+        <div className="mb-4 flex justify-center">
           <span className="px-3 py-1 rounded-full text-xs font-semibold"
             style={pkg.status === 'available'
               ? { background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }
@@ -149,12 +179,12 @@ const UCPackageCard = ({ pkg, index }) => {
         {/* CTA */}
         {pkg.status === 'available' ? (
           <a href={waLink} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 hover:-translate-y-0.5"
+            className="mt-auto flex items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-sm transition-all duration-200 hover:-translate-y-0.5"
             style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>
             <MessageCircle className="w-4 h-4" /> Buy Now on WhatsApp
           </a>
         ) : (
-          <div className="flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm"
+          <div className="mt-auto flex items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-sm"
             style={{ background: 'rgba(100,100,100,0.15)', color: '#6b7280', border: '1px solid rgba(100,100,100,0.2)', cursor: 'not-allowed' }}>
             <MessageCircle className="w-4 h-4" /> Currently Unavailable
           </div>
@@ -192,7 +222,7 @@ const UCPackages = () => {
             style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)', color: '#c084fc' }}>
             <Package className="w-3.5 h-3.5" /> UC Packages
           </div>
-          <h1 className="font-black text-4xl md:text-5xl text-white mb-4">
+          <h1 className="mb-4 text-[28px] font-black text-white sm:text-[30px] md:text-[34px] lg:text-[38px]">
             Buy <span style={{ background: 'linear-gradient(135deg,#8b5cf6,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>UC Packages</span>
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -219,7 +249,7 @@ const UCPackages = () => {
 
         {/* Packages Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid justify-items-center grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : packages.length === 0 ? (
@@ -234,7 +264,7 @@ const UCPackages = () => {
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid justify-items-center grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {packages.map((pkg, i) => (
               <UCPackageCard key={pkg._id} pkg={pkg} index={i} />
             ))}
