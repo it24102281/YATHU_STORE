@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const Admin = require('./models/Admin');
+const { ensureFeaturedDealsSeedData } = require('./utils/seedFeaturedDeals');
 require('dotenv').config();
 
 const app = express();
@@ -86,6 +87,7 @@ mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yathu-pubg-store')
   .then(async () => {
     await ensureDefaultAdmin();
+    await ensureFeaturedDealsSeedData();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
