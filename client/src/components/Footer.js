@@ -16,9 +16,10 @@ const Footer = () => {
 
   const serviceLinks = [
     { name: 'PUBG Accounts', path: '/accounts' },
-    { name: 'UC Packages', path: '/services' },
-    { name: 'Premium IDs', path: '/accounts' },
-    { name: 'High Rank Accounts', path: '/accounts' },
+    { name: 'Featured Deals', path: '/services' },
+    { name: 'PUBG Services', path: '/services' },
+    { name: 'Premium Subscriptions', path: '/services' },
+    { name: 'Social Boosters', path: '/services' },
     { name: 'Custom Orders', path: '/contact' },
   ];
 
@@ -82,9 +83,9 @@ const Footer = () => {
             </ul>
           </motion.div>
 
-          {/* Services */}
+          {/* Featured Deals */}
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}>
-            <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-5" style={{ color: '#a855f7' }}>Services</h4>
+            <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-5" style={{ color: '#a855f7' }}>Featured Deals</h4>
             <ul className="space-y-3">
               {serviceLinks.map((l) => (
                 <li key={l.name}>

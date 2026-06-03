@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Zap, Star, Trophy, Package } from 'lucide-react';
+import { MessageCircle, Zap, Star, Trophy, Package, X } from 'lucide-react';
 import axios from 'axios';
 
 const WHATSAPP_NUMBER = '94763442220';
 const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
+const DESCRIPTION_PREVIEW_LIMIT = 160;
 
 const badgeConfig = {
   'best-deal': { label: 'Best Deal', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)', icon: Trophy },
@@ -29,7 +30,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-const UCPackageCard = ({ pkg, index }) => {
+const UCPackageCard = ({ pkg, index, onSeeMore }) => {
   const badge = badgeConfig[pkg.badge] || badgeConfig.none;
   const BadgeIcon = badge.icon;
 
@@ -44,6 +45,11 @@ const UCPackageCard = ({ pkg, index }) => {
   const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMessage}`;
 
   const isBonus = pkg.category === 'bonus';
+  const safeDescription = pkg.description || '';
+  const isLongDescription = safeDescription.length > DESCRIPTION_PREVIEW_LIMIT;
+  const previewDescription = isLongDescription
+    ? `${safeDescription.slice(0, DESCRIPTION_PREVIEW_LIMIT).trimEnd()}...`
+    : safeDescription;
 
   return (
     <motion.div
@@ -136,9 +142,28 @@ const UCPackageCard = ({ pkg, index }) => {
           </div>
         )}
 
-        {pkg.description && (
-          <p className="mb-3 text-sm leading-relaxed text-gray-300">{pkg.description}</p>
-        )}
+        <div className="mb-4 min-h-[128px] flex flex-col">
+          {safeDescription ? (
+            <>
+              <p className="text-sm leading-relaxed text-gray-300">{previewDescription}</p>
+              {isLongDescription ? (
+                <button
+                  type="button"
+                  onClick={() => onSeeMore(pkg)}
+                  className="mt-3 self-center text-sm font-semibold text-purple-300 hover:text-purple-200 transition-colors"
+                >
+                  See more
+                </button>
+              ) : (
+                <div className="mt-3 h-[21px]" />
+              )}
+            </>
+          ) : (
+            <div className="h-full flex items-start justify-center">
+              <div className="mt-3 h-[21px]" />
+            </div>
+          )}
+        </div>
 
         {/* Top-up method */}
         {pkg.topupMethod === 'tag' && (
@@ -198,6 +223,7 @@ const UCPackageCard = ({ pkg, index }) => {
 const UCPackages = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPackage, setSelectedPackage] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -267,7 +293,7 @@ const UCPackages = () => {
         ) : (
           <div className="grid justify-items-center grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {packages.map((pkg, i) => (
-              <UCPackageCard key={pkg._id} pkg={pkg} index={i} />
+              <UCPackageCard key={pkg._id} pkg={pkg} index={i} onSeeMore={setSelectedPackage} />
             ))}
           </div>
         )}
@@ -284,6 +310,48 @@ const UCPackages = () => {
           </p>
         </motion.div>
       </div>
+
+      {selectedPackage ? (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setSelectedPackage(null)}
+        >
+          <div
+            className="w-full max-w-xl rounded-3xl p-6"
+            style={{
+              background: 'linear-gradient(145deg, rgba(24,24,34,0.98), rgba(10,10,16,0.98))',
+              border: '1px solid rgba(139,92,246,0.2)',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.4)',
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <div className="text-sm font-semibold text-purple-300 mb-1">UC Package Details</div>
+                <h3 className="text-2xl font-black text-white">
+                  {selectedPackage.ucAmounts?.length
+                    ? selectedPackage.ucAmounts.map((amount) => (typeof amount === 'number' ? `${amount.toLocaleString()} UC` : amount)).join(' + ')
+                    : selectedPackage.ucAmount
+                    ? `${Number(selectedPackage.ucAmount).toLocaleString()} UC`
+                    : 'UC Package'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPackage(null)}
+                className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="rounded-2xl p-5 text-gray-300 leading-relaxed text-base" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              {selectedPackage.description}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

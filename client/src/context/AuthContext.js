@@ -20,6 +20,7 @@ const authReducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN_SUCCESS':
       localStorage.setItem('token', action.payload.token);
+      applyAuthToken(action.payload.token);
       return {
         ...state,
         token: action.payload.token,
@@ -29,17 +30,17 @@ const authReducer = (state, action) => {
         error: null
       };
     case 'LOGIN_FAIL':
-      localStorage.removeItem('token');
       return {
         ...state,
-        token: null,
-        admin: null,
-        isAuthenticated: false,
+        token: state.token,
+        admin: state.admin,
+        isAuthenticated: state.isAuthenticated,
         loading: false,
         error: action.payload
       };
     case 'LOGOUT':
       localStorage.removeItem('token');
+      applyAuthToken(null);
       return {
         ...state,
         token: null,
@@ -58,6 +59,7 @@ const authReducer = (state, action) => {
       };
     case 'LOAD_USER_FAIL':
       localStorage.removeItem('token');
+      applyAuthToken(null);
       return {
         ...state,
         token: null,
@@ -89,6 +91,16 @@ const api = axios.create({
   }
 });
 
+const applyAuthToken = (token) => {
+  if (token) {
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common.Authorization;
+  }
+};
+
+applyAuthToken(localStorage.getItem('token'));
+
 // Set auth token header
 api.interceptors.request.use(
   (config) => {
@@ -114,12 +126,13 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
+        applyAuthToken(token);
 
-        const res = await api.get('/auth/verify');
+        const res = await api.get('/admin/verify');
 
         dispatch({
           type: 'LOAD_USER_SUCCESS',
-          payload: res.data.user
+          payload: res.data?.data?.admin
         });
       } catch (err) {
         dispatch({
@@ -137,13 +150,19 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
 
-      const res = await api.post('/auth/admin-login', { email, password });
+      const res = await api.post('/admin/login', { email, password });
+      const token = res.data?.data?.token;
+      const admin = res.data?.data?.admin;
+
+      if (!token || !admin) {
+        throw new Error('Login response is missing token data');
+      }
 
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: {
-          token: res.data.token,
-          admin: res.data.user
+          token,
+          admin
         }
       });
 

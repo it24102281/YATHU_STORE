@@ -36,7 +36,7 @@ const AdminLayout = () => {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
   }
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/admin/login" replace />;
   }
 
@@ -105,7 +105,7 @@ const AdminLayout = () => {
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-purple-500/20 bg-gradient-to-t from-gray-950 to-transparent">
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 mb-4">
                 <p className="text-xs text-gray-400 mb-1">Logged in as</p>
-                <p className="text-sm font-bold text-purple-300">{user?.username || 'Admin'}</p>
+                <p className="text-sm font-bold text-purple-300">{user?.name || 'Admin'}</p>
               </div>
               <button
                 onClick={handleLogout}

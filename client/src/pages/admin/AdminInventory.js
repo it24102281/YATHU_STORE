@@ -8,6 +8,7 @@ import {
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import { extractYouTubeId, getYouTubeThumbnail, getAutoThumbnail } from '../../utils/video';
+import FeaturedDealsManagement from '../../components/admin/FeaturedDealsManagement';
 
 /* ── Shared helpers ──────────────────────────────────────────── */
 const inputCls = {
@@ -984,6 +985,7 @@ const AdminInventory = () => {
   const tabs = [
     { id: 'accounts',  label: 'Accounts',    icon: Gamepad2 },
     { id: 'uc',        label: 'UC Packages', icon: Package  },
+    { id: 'featured-deals', label: 'Featured Deals', icon: Star },
   ];
 
   return (
@@ -991,7 +993,7 @@ const AdminInventory = () => {
       {/* Page header */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <h1 className="text-3xl font-black text-white mb-1">Inventory Management</h1>
-        <p className="text-gray-500 text-sm">Manage gaming accounts and UC packages from one place.</p>
+        <p className="text-gray-500 text-sm">Manage gaming accounts, UC packages, and featured deals from one place.</p>
       </motion.div>
 
       {/* Tabs */}
@@ -1014,7 +1016,13 @@ const AdminInventory = () => {
         <motion.div key={activeTab}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.2 }}>
-          {activeTab === 'accounts' ? <AccountsTab api={api} /> : <UCTab api={api} />}
+          {activeTab === 'accounts' ? (
+            <AccountsTab api={api} />
+          ) : activeTab === 'uc' ? (
+            <UCTab api={api} />
+          ) : (
+            <FeaturedDealsManagement />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>

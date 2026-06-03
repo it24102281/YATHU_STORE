@@ -45,7 +45,7 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'Accounts', path: '/accounts' },
     { name: 'UC Packages', path: '/uc-packages' },
-    { name: 'Services', path: '/services' },
+    { name: 'Featured Deals', path: '/services' },
     { name: 'Reviews', path: '/reviews' },
     { name: 'Contact', path: '/contact' },
   ];
@@ -150,7 +150,7 @@ const Navbar = () => {
                     >
                       <div className="p-2 space-y-1">
                         {[
-                          { to: '/admin/dashboard', icon: Shield, label: 'Dashboard' },
+                          { to: '/admin', icon: Shield, label: 'Dashboard' },
                           { to: '/admin/accounts', icon: Package, label: 'Accounts' },
                           { to: '/admin/contacts', icon: MessageSquare, label: 'Contacts' },
                         ].map(({ to, icon: Icon, label }) => (
@@ -233,7 +233,7 @@ const Navbar = () => {
                         </div>
                       </div>
                       {[
-                        { to: '/admin/dashboard', label: 'Dashboard' },
+                        { to: '/admin', label: 'Dashboard' },
                         { to: '/admin/accounts', label: 'Accounts' },
                         { to: '/admin/contacts', label: 'Contacts' },
                       ].map(({ to, label }) => (

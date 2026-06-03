@@ -17,10 +17,9 @@ import {
   Headphones,
   BadgeCheck,
   Package,
-  TrendingUp,
-  Facebook,
 } from 'lucide-react';
 import AccountCard from '../components/AccountCard';
+import FeaturedDeals from '../components/FeaturedDeals';
 import { useAuth } from '../context/AuthContext';
 
 /* ── Animated counter hook ─────────────────────────────────────── */
@@ -113,7 +112,7 @@ const Home = () => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get('/products/featured');
+        const res = await api.get('/accounts/featured');
         setFeaturedAccounts(res.data.data);
       } catch (e) {
         console.error(e);
@@ -142,8 +141,6 @@ const Home = () => {
     { name: 'Sarah Johnson', rank: 'Diamond Tier', msg: 'Very trustworthy seller. The account transfer was smooth and customer support was incredibly helpful.', rating: 5, initials: 'SJ', color: '#a855f7' },
     { name: 'Mike Wilson', rank: 'Platinum Tier', msg: 'High quality PUBG IDs with rare skins. Got my Glacier M416 and mythic set. 100% legit!', rating: 5, initials: 'MW', color: '#c084fc' },
   ];
-
-  const offerBadges = ['Best Seller', 'Popular', 'Limited Offer'];
 
   const trustPoints = [
     'Secure Transactions',
@@ -324,6 +321,7 @@ const Home = () => {
       </section>
 
       {/* ── SPECIAL OFFERS ──────────────────────────────────────── */}
+      {false && (<>
       <section className="py-24" style={{ background: 'linear-gradient(180deg, #0f0a1e 0%, #0a0a0a 100%)' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading badge="Special Offers" title="Exclusive Deals For You" subtitle="Unbeatable prices on UC packages, premium accounts, and limited-time discount offers." />
@@ -415,6 +413,13 @@ const Home = () => {
       </section>
 
       {/* ── FEATURED ACCOUNTS ───────────────────────────────────── */}
+      </>)}
+
+      <FeaturedDeals
+        heading="Featured Deals"
+        subtitle="Live inventory from the admin panel across PUBG services, premium subscriptions, and social media boosters."
+      />
+
       <section className="py-24" style={{ background: '#0a0a0a' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading
