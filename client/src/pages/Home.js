@@ -417,7 +417,10 @@ const Home = () => {
 
       <FeaturedDeals
         heading="Featured Deals"
-        subtitle="Live inventory from the admin panel across PUBG services, premium subscriptions, and social media boosters."
+        subtitle="The 3 latest Featured Deals uploaded from your admin inventory."
+        showFilters={false}
+        maxItems={3}
+        latestFirst
       />
 
       <section className="py-24" style={{ background: '#0a0a0a' }}>

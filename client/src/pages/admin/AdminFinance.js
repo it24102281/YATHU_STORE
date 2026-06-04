@@ -49,8 +49,8 @@ const AdminFinance = () => {
       filteredOrders = orders.filter(o => new Date(o.createdAt) > monthAgo);
     }
 
-    const completedOrders = filteredOrders.filter(o => o.status === 'completed');
-    const totalRevenue = completedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
+      const completedOrders = filteredOrders.filter(o => o.orderStatus === 'Completed');
+      const totalRevenue = completedOrders.reduce((sum, o) => sum + o.price, 0);
     const totalOrders = filteredOrders.length;
     const averageOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0;
 
@@ -60,8 +60,8 @@ const AdminFinance = () => {
       completedOrders: completedOrders.length,
       averageOrderValue,
       pendingRevenue: filteredOrders
-        .filter(o => o.status === 'pending')
-        .reduce((sum, o) => sum + o.totalPrice, 0)
+        .filter(o => o.orderStatus === 'Pending')
+        .reduce((sum, o) => sum + o.price, 0)
         .toFixed(2)
     };
   };
@@ -99,10 +99,10 @@ const AdminFinance = () => {
   const getTopProducts = () => {
     const productRevenue = {};
     orders
-      .filter(o => o.status === 'completed')
+      .filter(o => o.orderStatus === 'Completed')
       .forEach(order => {
-        const productName = order.product?.name || 'Unknown';
-        productRevenue[productName] = (productRevenue[productName] || 0) + order.totalPrice;
+        const productName = order.productName || 'Unknown';
+        productRevenue[productName] = (productRevenue[productName] || 0) + order.price;
       });
 
     return Object.entries(productRevenue)
@@ -217,16 +217,16 @@ const AdminFinance = () => {
                     .slice(0, 10)
                     .map((order) => (
                       <tr key={order._id} className="border-b border-gray-700 hover:bg-gray-900/30 transition-colors">
-                        <td className="px-4 py-3 text-gray-300 font-mono text-sm">{order.orderNumber.substring(0, 12)}...</td>
-                        <td className="px-4 py-3 text-white">{order.user?.username}</td>
-                        <td className="px-4 py-3 text-white font-bold">${order.totalPrice}</td>
+                        <td className="px-4 py-3 text-gray-300 font-mono text-sm">{String(order._id).slice(-10).toUpperCase()}</td>
+                        <td className="px-4 py-3 text-white">{order.user?.fullName}</td>
+                        <td className="px-4 py-3 text-white font-bold">LKR {order.price}</td>
                         <td className="px-4 py-3">
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            order.status === 'completed' ? 'bg-green-500/20 text-green-300' :
-                            order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                            order.orderStatus === 'Completed' ? 'bg-green-500/20 text-green-300' :
+                            order.orderStatus === 'Pending' ? 'bg-yellow-500/20 text-yellow-300' :
                             'bg-gray-500/20 text-gray-300'
                           }`}>
-                            {order.status}
+                            {order.orderStatus}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-gray-400 text-sm">

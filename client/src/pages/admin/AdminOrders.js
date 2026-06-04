@@ -39,8 +39,8 @@ const AdminOrders = () => {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await api.put(`/orders/${orderId}/status`, {
-        status: newStatus,
-        paymentStatus: 'completed'
+        orderStatus: newStatus,
+        paymentStatus: newStatus === 'Completed' ? 'Paid' : undefined
       });
       setSuccess('Order updated successfully!');
       fetchOrders();
@@ -52,21 +52,21 @@ const AdminOrders = () => {
   };
 
   const filteredOrders = orders.filter(order =>
-    statusFilter === 'all' || order.status === statusFilter
+    statusFilter === 'all' || order.orderStatus?.toLowerCase() === statusFilter
   );
 
   const statusColors = {
-    pending: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-    processing: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    completed: 'bg-green-500/20 text-green-300 border-green-500/30',
-    cancelled: 'bg-red-500/20 text-red-300 border-red-500/30'
+    Pending: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+    Processing: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    Completed: 'bg-green-500/20 text-green-300 border-green-500/30',
+    Cancelled: 'bg-red-500/20 text-red-300 border-red-500/30'
   };
 
   const statusIcons = {
-    pending: <Clock className="w-4 h-4" />,
-    processing: <Loader className="w-4 h-4 animate-spin" />,
-    completed: <CheckCircle className="w-4 h-4" />,
-    cancelled: <AlertCircle className="w-4 h-4" />
+    Pending: <Clock className="w-4 h-4" />,
+    Processing: <Loader className="w-4 h-4 animate-spin" />,
+    Completed: <CheckCircle className="w-4 h-4" />,
+    Cancelled: <AlertCircle className="w-4 h-4" />
   };
 
   return (
@@ -140,27 +140,27 @@ const AdminOrders = () => {
                 {/* Order Number */}
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Order ID</p>
-                  <p className="font-mono text-sm text-purple-300">{order.orderNumber}</p>
+                  <p className="font-mono text-sm text-purple-300">{String(order._id).slice(-10).toUpperCase()}</p>
                 </div>
 
                 {/* Customer */}
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Customer</p>
-                  <p className="text-white font-medium">{order.user?.username || 'N/A'}</p>
+                  <p className="text-white font-medium">{order.user?.fullName || 'N/A'}</p>
                 </div>
 
                 {/* Amount */}
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Amount</p>
-                  <p className="text-white font-bold text-lg">${order.totalPrice}</p>
+                  <p className="text-white font-bold text-lg">LKR {order.price}</p>
                 </div>
 
                 {/* Status */}
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Status</p>
-                  <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border w-fit ${statusColors[order.status]}`}>
-                    {statusIcons[order.status]}
-                    <span className="text-sm font-medium capitalize">{order.status}</span>
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border w-fit ${statusColors[order.orderStatus]}`}>
+                    {statusIcons[order.orderStatus]}
+                    <span className="text-sm font-medium">{order.orderStatus}</span>
                   </div>
                 </div>
 
@@ -195,19 +195,19 @@ const AdminOrders = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-800/30 rounded-lg p-4">
                   <p className="text-xs text-gray-400 mb-1">Order Number</p>
-                  <p className="text-white font-mono">{selectedOrder.orderNumber}</p>
+                  <p className="text-white font-mono">{String(selectedOrder._id).slice(-10).toUpperCase()}</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4">
                   <p className="text-xs text-gray-400 mb-1">Customer</p>
-                  <p className="text-white">{selectedOrder.user?.username}</p>
+                  <p className="text-white">{selectedOrder.user?.fullName}</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4">
                   <p className="text-xs text-gray-400 mb-1">Product</p>
-                  <p className="text-white">{selectedOrder.product?.name}</p>
+                  <p className="text-white">{selectedOrder.productName}</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4">
                   <p className="text-xs text-gray-400 mb-1">Amount</p>
-                  <p className="text-white font-bold">${selectedOrder.totalPrice}</p>
+                  <p className="text-white font-bold">LKR {selectedOrder.price}</p>
                 </div>
               </div>
 
@@ -215,17 +215,17 @@ const AdminOrders = () => {
               <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-4">
                 <p className="text-sm font-bold text-white mb-3">Update Status</p>
                 <div className="flex gap-2 flex-wrap">
-                  {['pending', 'processing', 'completed', 'cancelled'].map(status => (
+                  {['Pending', 'Processing', 'Completed', 'Cancelled'].map(status => (
                     <button
                       key={status}
                       onClick={() => updateOrderStatus(selectedOrder._id, status)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        selectedOrder.status === status
+                        selectedOrder.orderStatus === status
                           ? 'bg-purple-600 text-white'
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       }`}
                     >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {status}
                     </button>
                   ))}
                 </div>

@@ -17,9 +17,17 @@ app.use(
   })
 );
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: isDevelopment ? 1000 : 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests. Please wait a moment and try again.',
+  },
 });
 app.use(limiter);
 
@@ -32,6 +40,10 @@ app.use('/api/accounts', require('./routes/accounts'));
 app.use('/api/uc-packages', require('./routes/ucPackages'));
 app.use('/api/featured-deals', require('./routes/featuredDeals'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/admin', require('./routes/adminUsers'));
+app.use('/api/auth/user', require('./routes/authUser'));
+app.use('/api/user', require('./routes/user'));
+app.use('/api/orders', require('./routes/orders'));
 app.use('/api/contact', require('./routes/contact'));
 
 app.get('/api/health', (req, res) => {

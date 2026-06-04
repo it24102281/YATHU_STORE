@@ -23,6 +23,12 @@ import Reviews from './pages/Reviews';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
+import UserLogin from './pages/user/UserLogin';
+import UserSignup from './pages/user/UserSignup';
+import UserForgotPassword from './pages/user/UserForgotPassword';
+import UserResetPassword from './pages/user/UserResetPassword';
+import UserProfile from './pages/user/UserProfile';
+import UserOrders from './pages/user/UserOrders';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -34,9 +40,11 @@ import AdminFinance from './pages/admin/AdminFinance';
 import AdminOffers from './pages/admin/AdminOffers';
 import AdminAccounts from './pages/admin/AdminAccounts';
 import AdminContacts from './pages/admin/AdminContacts';
+import AdminUsers from './pages/admin/AdminUsers';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
+import RequireUserAuth from './components/RequireUserAuth';
 
 function App() {
   return (
@@ -61,12 +69,20 @@ function App() {
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/refund" element={<Refund />} />
+                <Route path="/user/login" element={<UserLogin />} />
+                <Route path="/user/signup" element={<UserSignup />} />
+                <Route path="/user/forgot-password" element={<UserForgotPassword />} />
+                <Route path="/user/reset-password" element={<UserResetPassword />} />
+                <Route path="/user/profile" element={<RequireUserAuth><UserProfile /></RequireUserAuth>} />
+                <Route path="/user/orders" element={<RequireUserAuth><UserOrders /></RequireUserAuth>} />
               </Route>
 
               {/* Admin Routes */}
               <Route element={<AdminLayout />}>
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/inventory" element={<AdminInventory />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/accounts" element={<AdminAccounts />} />
                 <Route path="/admin/contacts" element={<AdminContacts />} />
                 <Route path="/admin/orders" element={<AdminOrders />} />

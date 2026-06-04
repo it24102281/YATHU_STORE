@@ -3,235 +3,388 @@ import axios from 'axios';
 
 const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
 
-// Create context
 const AuthContext = createContext();
 
-// Initial state
+const getStoredAdminToken = () => localStorage.getItem('adminToken') || localStorage.getItem('token');
+const getStoredUserToken = () => localStorage.getItem('userToken');
+
 const initialState = {
-  token: localStorage.getItem('token'),
+  adminToken: getStoredAdminToken(),
+  userToken: getStoredUserToken(),
   admin: null,
-  isAuthenticated: false,
+  customer: null,
+  isAuthenticated: Boolean(getStoredAdminToken()),
+  isUserAuthenticated: Boolean(getStoredUserToken()),
+  adminLoading: true,
+  userLoading: true,
   loading: true,
-  error: null
+  error: null,
+  userError: null,
 };
 
-// Reducer
 const authReducer = (state, action) => {
   switch (action.type) {
-    case 'LOGIN_SUCCESS':
+    case 'ADMIN_LOGIN_SUCCESS':
       localStorage.setItem('token', action.payload.token);
-      applyAuthToken(action.payload.token);
+      localStorage.setItem('adminToken', action.payload.token);
       return {
         ...state,
-        token: action.payload.token,
+        adminToken: action.payload.token,
         admin: action.payload.admin,
         isAuthenticated: true,
+        adminLoading: false,
         loading: false,
-        error: null
+        error: null,
       };
-    case 'LOGIN_FAIL':
+    case 'ADMIN_LOGIN_FAIL':
       return {
         ...state,
-        token: state.token,
-        admin: state.admin,
-        isAuthenticated: state.isAuthenticated,
-        loading: false,
-        error: action.payload
+        adminLoading: false,
+        loading: state.userLoading,
+        error: action.payload,
       };
-    case 'LOGOUT':
-      localStorage.removeItem('token');
-      applyAuthToken(null);
-      return {
-        ...state,
-        token: null,
-        admin: null,
-        isAuthenticated: false,
-        loading: false,
-        error: null
-      };
-    case 'LOAD_USER_SUCCESS':
+    case 'ADMIN_LOAD_SUCCESS':
       return {
         ...state,
         admin: action.payload,
         isAuthenticated: true,
-        loading: false,
-        error: null
+        adminLoading: false,
+        loading: state.userLoading,
+        error: null,
       };
-    case 'LOAD_USER_FAIL':
+    case 'ADMIN_LOAD_FAIL':
       localStorage.removeItem('token');
-      applyAuthToken(null);
+      localStorage.removeItem('adminToken');
       return {
         ...state,
-        token: null,
+        adminToken: null,
         admin: null,
         isAuthenticated: false,
-        loading: false,
-        error: action.payload
+        adminLoading: false,
+        loading: state.userLoading,
+        error: action.payload,
+      };
+    case 'ADMIN_LOGOUT':
+      localStorage.removeItem('token');
+      localStorage.removeItem('adminToken');
+      return {
+        ...state,
+        adminToken: null,
+        admin: null,
+        isAuthenticated: false,
+        adminLoading: false,
+        loading: state.userLoading,
+        error: null,
+      };
+    case 'USER_LOGIN_SUCCESS':
+      localStorage.setItem('userToken', action.payload.token);
+      return {
+        ...state,
+        userToken: action.payload.token,
+        customer: action.payload.user,
+        isUserAuthenticated: true,
+        userLoading: false,
+        loading: state.adminLoading,
+        userError: null,
+      };
+    case 'USER_LOGIN_FAIL':
+      return {
+        ...state,
+        userLoading: false,
+        loading: state.adminLoading,
+        userError: action.payload,
+      };
+    case 'USER_LOAD_SUCCESS':
+      return {
+        ...state,
+        customer: action.payload,
+        isUserAuthenticated: true,
+        userLoading: false,
+        loading: state.adminLoading,
+        userError: null,
+      };
+    case 'USER_LOAD_FAIL':
+      localStorage.removeItem('userToken');
+      return {
+        ...state,
+        userToken: null,
+        customer: null,
+        isUserAuthenticated: false,
+        userLoading: false,
+        loading: state.adminLoading,
+        userError: action.payload,
+      };
+    case 'USER_LOGOUT':
+      localStorage.removeItem('userToken');
+      return {
+        ...state,
+        userToken: null,
+        customer: null,
+        isUserAuthenticated: false,
+        userLoading: false,
+        loading: state.adminLoading,
+        userError: null,
+      };
+    case 'UPDATE_CUSTOMER':
+      return {
+        ...state,
+        customer: action.payload,
       };
     case 'CLEAR_ERROR':
       return {
         ...state,
-        error: null
+        error: null,
+        userError: null,
       };
-    case 'SET_LOADING':
+    case 'SET_ADMIN_LOADING':
       return {
         ...state,
-        loading: action.payload
+        adminLoading: action.payload,
+        loading: action.payload || state.userLoading,
+      };
+    case 'SET_USER_LOADING':
+      return {
+        ...state,
+        userLoading: action.payload,
+        loading: state.adminLoading || action.payload,
       };
     default:
       return state;
   }
 };
 
-// API setup
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
-const applyAuthToken = (token) => {
-  if (token) {
-    api.defaults.headers.common.Authorization = `Bearer ${token}`;
-  } else {
-    delete api.defaults.headers.common.Authorization;
-  }
-};
-
-applyAuthToken(localStorage.getItem('token'));
-
-// Set auth token header
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!config.headers.Authorization) {
+      const adminToken = getStoredAdminToken();
+      const userToken = getStoredUserToken();
+      const fallbackToken = adminToken || userToken;
+
+      if (fallbackToken) {
+        config.headers.Authorization = `Bearer ${fallbackToken}`;
+      }
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Auth provider component
+const withAdminHeaders = () => {
+  const token = getStoredAdminToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const withUserHeaders = () => {
+  const token = getStoredUserToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Load user
-  const loadUser = async () => {
-    const token = localStorage.getItem('token');
+  const loadAdmin = async () => {
+    const token = getStoredAdminToken();
 
-    if (token) {
-      try {
-        dispatch({ type: 'SET_LOADING', payload: true });
-        applyAuthToken(token);
+    if (!token) {
+      dispatch({ type: 'SET_ADMIN_LOADING', payload: false });
+      return;
+    }
 
-        const res = await api.get('/admin/verify');
-
-        dispatch({
-          type: 'LOAD_USER_SUCCESS',
-          payload: res.data?.data?.admin
-        });
-      } catch (err) {
-        dispatch({
-          type: 'LOAD_USER_FAIL',
-          payload: 'Token is invalid or expired'
-        });
-      }
-    } else {
-      dispatch({ type: 'SET_LOADING', payload: false });
+    try {
+      dispatch({ type: 'SET_ADMIN_LOADING', payload: true });
+      const res = await api.get('/admin/verify', { headers: withAdminHeaders() });
+      dispatch({
+        type: 'ADMIN_LOAD_SUCCESS',
+        payload: res.data?.data?.admin,
+      });
+    } catch (err) {
+      dispatch({
+        type: 'ADMIN_LOAD_FAIL',
+        payload: 'Token is invalid or expired',
+      });
     }
   };
 
-  // Login admin
+  const loadCustomer = async () => {
+    const token = getStoredUserToken();
+
+    if (!token) {
+      dispatch({ type: 'SET_USER_LOADING', payload: false });
+      return;
+    }
+
+    try {
+      dispatch({ type: 'SET_USER_LOADING', payload: true });
+      const res = await api.get('/user/profile', { headers: withUserHeaders() });
+      dispatch({
+        type: 'USER_LOAD_SUCCESS',
+        payload: res.data?.data,
+      });
+    } catch (err) {
+      dispatch({
+        type: 'USER_LOAD_FAIL',
+        payload: 'User session is invalid or expired',
+      });
+    }
+  };
+
   const login = async (email, password) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-
+      dispatch({ type: 'SET_ADMIN_LOADING', payload: true });
       const res = await api.post('/admin/login', { email, password });
       const token = res.data?.data?.token;
       const admin = res.data?.data?.admin;
 
       if (!token || !admin) {
-        throw new Error('Login response is missing token data');
+        throw new Error('Login response is missing admin data');
       }
 
       dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: {
-          token,
-          admin
-        }
+        type: 'ADMIN_LOGIN_SUCCESS',
+        payload: { token, admin },
       });
 
       return { success: true, data: res.data };
     } catch (err) {
+      const message = err.response?.data?.message || 'Login failed';
       dispatch({
-        type: 'LOGIN_FAIL',
-        payload: err.response?.data?.message || 'Login failed'
+        type: 'ADMIN_LOGIN_FAIL',
+        payload: message,
       });
-
-      return {
-        success: false,
-        message: err.response?.data?.message || 'Login failed'
-      };
+      return { success: false, message };
     }
   };
 
-  // Logout
-  const logout = () => {
-    dispatch({ type: 'LOGOUT' });
+  const userLogin = async (identifier, password) => {
+    try {
+      dispatch({ type: 'SET_USER_LOADING', payload: true });
+      const res = await api.post('/auth/user/login', { identifier, password });
+      const token = res.data?.data?.token;
+      const user = res.data?.data?.user;
+
+      dispatch({
+        type: 'USER_LOGIN_SUCCESS',
+        payload: { token, user },
+      });
+
+      return { success: true, message: res.data?.message || 'Login successful', data: user };
+    } catch (err) {
+      const message = err.response?.data?.message || 'Invalid login details';
+      dispatch({
+        type: 'USER_LOGIN_FAIL',
+        payload: message,
+      });
+      return { success: false, message };
+    }
   };
 
-  // Clear errors
+  const userSignup = async (payload) => {
+    const res = await api.post('/auth/user/signup', payload);
+    return res.data;
+  };
+
+  const verifyUserSignup = async (payload) => {
+    const res = await api.post('/auth/user/verify-signup', payload);
+    return res.data;
+  };
+
+  const resendSignupCode = async (email) => {
+    const res = await api.post('/auth/user/resend-signup-code', { email });
+    return res.data;
+  };
+
+  const forgotPassword = async (email) => {
+    const res = await api.post('/auth/user/forgot-password', { email });
+    return res.data;
+  };
+
+  const resetPassword = async (payload) => {
+    const res = await api.post('/auth/user/reset-password', payload);
+    return res.data;
+  };
+
+  const logout = () => {
+    dispatch({ type: 'ADMIN_LOGOUT' });
+  };
+
+  const userLogout = async () => {
+    try {
+      if (getStoredUserToken()) {
+        await api.post('/auth/user/logout', {}, { headers: withUserHeaders() });
+      }
+    } catch (error) {
+      // Keep UX smooth even if the backend session logout request fails.
+    } finally {
+      dispatch({ type: 'USER_LOGOUT' });
+    }
+  };
+
+  const updateUserProfile = async (payload) => {
+    const res = await api.put('/user/profile', payload, { headers: withUserHeaders() });
+    dispatch({ type: 'UPDATE_CUSTOMER', payload: res.data?.data });
+    return res.data;
+  };
+
+  const changeUserPassword = async (payload) => {
+    const res = await api.put('/user/change-password', payload, { headers: withUserHeaders() });
+    return res.data;
+  };
+
+  const getUserOrders = async () => {
+    const res = await api.get('/user/orders', { headers: withUserHeaders() });
+    return res.data;
+  };
+
   const clearError = () => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
-  // Check if user is admin
-  const isAdmin = () => {
-    return state.isAuthenticated && state.admin;
-  };
+  const isAdmin = () => state.isAuthenticated && Boolean(state.admin);
+  const isSuperAdmin = () => state.isAuthenticated && state.admin?.role === 'super_admin';
 
-  // Check if user is super admin
-  const isSuperAdmin = () => {
-    return state.isAuthenticated && state.admin?.role === 'super_admin';
-  };
-
-  // Get auth headers
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
-  // Load user on mount
   useEffect(() => {
-    loadUser();
+    loadAdmin();
+    loadCustomer();
   }, []);
 
   const value = {
     ...state,
     user: state.admin,
     login,
+    adminLogin: login,
     logout,
-    loadUser,
+    loadUser: loadAdmin,
+    loadAdmin,
+    loadCustomer,
     clearError,
     isAdmin,
     isSuperAdmin,
-    getAuthHeaders,
-    api
+    getAuthHeaders: withAdminHeaders,
+    getUserAuthHeaders: withUserHeaders,
+    userLogin,
+    userSignup,
+    verifyUserSignup,
+    resendSignupCode,
+    userLogout,
+    forgotPassword,
+    resetPassword,
+    updateUserProfile,
+    changeUserPassword,
+    getUserOrders,
+    api,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

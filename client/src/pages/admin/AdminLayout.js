@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   DollarSign,
   Tag,
+  Users as UsersIcon,
   LogOut,
   ChevronRight,
   Home
@@ -42,6 +43,7 @@ const AdminLayout = () => {
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
+    { name: 'Users', icon: UsersIcon, path: '/admin/users' },
     { name: 'Inventory', icon: Box, path: '/admin/inventory' },
     { name: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
     { name: 'Finance', icon: DollarSign, path: '/admin/finance' },

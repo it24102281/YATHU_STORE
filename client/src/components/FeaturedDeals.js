@@ -24,6 +24,9 @@ const FeaturedDeals = ({
   subtitle = 'Explore curated offers powered directly by the inventory database.',
   showHeader = true,
   compact = false,
+  showFilters = true,
+  maxItems,
+  latestFirst = false,
 }) => {
   const { api } = useAuth();
   const [deals, setDeals] = useState([]);
@@ -50,12 +53,21 @@ const FeaturedDeals = ({
   }, []);
 
   const filteredDeals = useMemo(() => {
-    if (activeCategory === 'All') {
-      return deals;
+    let nextDeals =
+      activeCategory === 'All'
+        ? [...deals]
+        : deals.filter((deal) => deal.category === activeCategory);
+
+    if (latestFirst) {
+      nextDeals.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
 
-    return deals.filter((deal) => deal.category === activeCategory);
-  }, [activeCategory, deals]);
+    if (typeof maxItems === 'number') {
+      nextDeals = nextDeals.slice(0, maxItems);
+    }
+
+    return nextDeals;
+  }, [activeCategory, deals, latestFirst, maxItems]);
 
   const getPreviewText = (description) => {
     const safeDescription = description || 'Professional delivery with reliable support and updated inventory status.';
@@ -97,22 +109,24 @@ const FeaturedDeals = ({
           </div>
         )}
 
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
-          {CATEGORY_OPTIONS.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className="px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200"
-              style={
-                activeCategory === category
-                  ? { background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', color: '#fff', boxShadow: '0 8px 24px rgba(139,92,246,0.25)' }
-                  : { background: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)' }
-              }
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        {showFilters && (
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            {CATEGORY_OPTIONS.map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className="px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200"
+                style={
+                  activeCategory === category
+                    ? { background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', color: '#fff', boxShadow: '0 8px 24px rgba(139,92,246,0.25)' }
+                    : { background: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)' }
+                }
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-20">

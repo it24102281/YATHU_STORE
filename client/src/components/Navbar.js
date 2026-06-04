@@ -5,22 +5,21 @@ import {
   Menu,
   X,
   User,
-  ChevronDown,
-  Shield,
-  Package,
-  MessageSquare,
   LogOut,
-  Gamepad2,
+  Wallet,
+  Activity,
+  FileText,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCustomerMenuOpen, setIsCustomerMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { admin, isAuthenticated, logout } = useAuth();
+  const { admin, customer, isAuthenticated, isUserAuthenticated, logout, userLogout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -30,15 +29,20 @@ const Navbar = () => {
 
   useEffect(() => {
     setIsMenuOpen(false);
-    setIsDropdownOpen(false);
+    setIsCustomerMenuOpen(false);
   }, [location.pathname]);
 
   const isActive = (path) => location.pathname === path;
+  const customerInitial = customer?.fullName?.trim()?.charAt(0)?.toUpperCase() || 'U';
 
-  const handleLogout = () => {
+  const handleAdminLogout = () => {
     logout();
     navigate('/');
-    setIsDropdownOpen(false);
+  };
+
+  const handleCustomerLogout = async () => {
+    await userLogout();
+    navigate('/');
   };
 
   const navLinks = [
@@ -48,6 +52,13 @@ const Navbar = () => {
     { name: 'Featured Deals', path: '/services' },
     { name: 'Reviews', path: '/reviews' },
     { name: 'Contact', path: '/contact' },
+  ];
+
+  const customerMenuItems = [
+    { label: 'Account', path: '/user/profile?tab=profile', icon: User, tone: 'text-gray-200' },
+    { label: 'Fund Tracker', path: '/user/profile?tab=tracker', icon: Activity, tone: 'text-gray-200' },
+    { label: 'Fund Add History', path: '/user/profile?tab=funds', icon: Wallet, tone: 'text-gray-200' },
+    { label: 'Terms', path: '/user/profile?tab=terms', icon: FileText, tone: 'text-gray-200' },
   ];
 
   return (
@@ -98,12 +109,12 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex flex-1 items-center justify-center gap-2 px-6">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`relative px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-xl ${
+                className={`relative px-4 py-2 text-[15px] font-semibold whitespace-nowrap transition-all duration-300 rounded-xl ${
                   isActive(link.path)
                     ? 'text-white'
                     : 'text-gray-400 hover:text-white'
@@ -123,48 +134,56 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Right: Admin Button */}
-          <div className="hidden lg:flex items-center gap-3">
-            {isAuthenticated ? (
+          {/* Right Actions */}
+          <div className="hidden lg:flex items-center justify-end min-w-[140px]">
+            {isUserAuthenticated ? (
               <div className="relative">
                 <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-gray-300 hover:text-white transition-all duration-300"
-                  style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)' }}
+                  onClick={() => setIsCustomerMenuOpen((prev) => !prev)}
+                  className="inline-flex h-14 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 transition-all duration-300 hover:border-purple-400/35 hover:bg-white/[0.06]"
                 >
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)' }}>
-                    <User className="w-4 h-4 text-white" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 via-violet-500 to-fuchsia-600 text-sm font-black text-white shadow-[0_10px_24px_rgba(139,92,246,0.32)]">
+                    {customerInitial}
                   </div>
-                  <span>{admin?.name}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isCustomerMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
+
                 <AnimatePresence>
-                  {isDropdownOpen && (
+                  {isCustomerMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-52 rounded-2xl overflow-hidden shadow-2xl"
-                      style={{ background: 'rgba(17,17,17,0.98)', backdropFilter: 'blur(24px)', border: '1px solid rgba(139,92,246,0.2)' }}
+                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute right-0 top-[calc(100%+12px)] w-72 overflow-hidden rounded-[24px] border border-white/10 bg-[#0b0b11]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
                     >
-                      <div className="p-2 space-y-1">
-                        {[
-                          { to: '/admin', icon: Shield, label: 'Dashboard' },
-                          { to: '/admin/accounts', icon: Package, label: 'Accounts' },
-                          { to: '/admin/contacts', icon: MessageSquare, label: 'Contacts' },
-                        ].map(({ to, icon: Icon, label }) => (
-                          <Link key={to} to={to} onClick={() => setIsDropdownOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-300 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-200">
-                            <Icon className="w-4 h-4" />
-                            <span>{label}</span>
-                          </Link>
-                        ))}
+                      <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+                        <div className="text-lg font-black text-white">{customer?.fullName || 'Customer'}</div>
+                        <div className="mt-1 text-sm text-gray-400">{customer?.email || 'Signed in'}</div>
                       </div>
-                      <div className="p-2 border-t border-white/5">
-                        <button onClick={handleLogout}
-                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all duration-200">
-                          <LogOut className="w-4 h-4" />
+
+                      <div className="mt-3 space-y-2">
+                        {customerMenuItems.map((item) => (
+                          <button
+                            key={item.label}
+                            onClick={() => {
+                              setIsCustomerMenuOpen(false);
+                              navigate(item.path);
+                            }}
+                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white/[0.05] hover:text-white"
+                          >
+                            <item.icon className={`h-4 w-4 ${item.tone}`} />
+                            <span className={item.tone}>{item.label}</span>
+                          </button>
+                        ))}
+                        <button
+                          onClick={async () => {
+                            setIsCustomerMenuOpen(false);
+                            await handleCustomerLogout();
+                          }}
+                          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 hover:text-white"
+                        >
+                          <LogOut className="h-4 w-4" />
                           <span>Logout</span>
                         </button>
                       </div>
@@ -172,15 +191,23 @@ const Navbar = () => {
                   )}
                 </AnimatePresence>
               </div>
-            ) : (
-              <Link
-                to="/admin/login"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-gray-400 hover:text-white transition-all duration-300"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            ) : isAuthenticated ? (
+              <button
+                onClick={handleAdminLogout}
+                className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-300 transition-all duration-300 hover:text-white"
               >
-                <Shield className="w-4 h-4" />
-                <span>Admin</span>
-              </Link>
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/user/login')}
+                className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-300"
+                style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', border: '1px solid rgba(139,92,246,0.4)' }}
+              >
+                <User className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
             )}
           </div>
 
@@ -232,27 +259,47 @@ const Navbar = () => {
                           <div className="text-xs text-gray-500">Administrator</div>
                         </div>
                       </div>
-                      {[
-                        { to: '/admin', label: 'Dashboard' },
-                        { to: '/admin/accounts', label: 'Accounts' },
-                        { to: '/admin/contacts', label: 'Contacts' },
-                      ].map(({ to, label }) => (
-                        <Link key={to} to={to} onClick={() => setIsMenuOpen(false)}
-                          className="block px-4 py-2.5 text-sm text-gray-400 hover:text-purple-400 hover:bg-purple-500/5 rounded-xl transition-all duration-200">
-                          {label}
-                        </Link>
+                      <button onClick={handleAdminLogout}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
+                        Logout
+                      </button>
+                    </>
+                  ) : isUserAuthenticated ? (
+                    <>
+                      <div className="px-4 py-3 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white" style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)' }}>
+                          {customerInitial}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-purple-400">{customer?.fullName}</div>
+                          <div className="text-xs text-gray-500">Customer Account</div>
+                        </div>
+                      </div>
+                      {customerMenuItems.map((item) => (
+                        <button
+                          key={item.label}
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            navigate(item.path);
+                          }}
+                          className="block w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-xl transition-all duration-200"
+                        >
+                          {item.label}
+                        </button>
                       ))}
-                      <button onClick={handleLogout}
+                      <button onClick={handleCustomerLogout}
                         className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
                         Logout
                       </button>
                     </>
                   ) : (
-                    <Link to="/admin/login" onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-200">
-                      <Shield className="w-4 h-4" />
-                      <span>Admin Login</span>
-                    </Link>
+                    <>
+                      <Link to="/user/login" onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-200">
+                        <User className="w-4 h-4" />
+                        <span>Sign In</span>
+                      </Link>
+                    </>
                   )}
                 </div>
               </div>

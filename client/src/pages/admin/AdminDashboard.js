@@ -14,7 +14,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
-  const { api } = useAuth();
+  const { api, getAuthHeaders } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -36,23 +36,31 @@ const AdminDashboard = () => {
       setLoading(true);
 
       // Fetch users
-      const usersRes = await api.get('/users').catch(() => ({ data: { users: [] } }));
-      const users = usersRes.data.users || [];
+      const usersRes = await api.get('/admin/users', { headers: getAuthHeaders() }).catch(() => ({ data: { data: [] } }));
+      const users = usersRes.data.data || [];
 
-      // Fetch products
-      const productsRes = await api.get('/products').catch(() => ({ data: { products: [] } }));
-      const products = productsRes.data.products || [];
+      // Fetch inventory groups
+      const [accountsRes, ucRes, dealsRes] = await Promise.all([
+        api.get('/accounts?status=all&limit=200').catch(() => ({ data: { data: [] } })),
+        api.get('/uc-packages?status=all').catch(() => ({ data: { data: [] } })),
+        api.get('/featured-deals?includeInactive=true', { headers: getAuthHeaders() }).catch(() => ({ data: { data: [] } })),
+      ]);
+      const products = [
+        ...(accountsRes.data.data || []),
+        ...(ucRes.data.data || []),
+        ...(dealsRes.data.data || []),
+      ];
 
       // Fetch orders
       const ordersRes = await api.get('/orders').catch(() => ({ data: { orders: [] } }));
       const orders = ordersRes.data.orders || [];
 
       const totalRevenue = orders
-        .filter(o => o.status === 'completed')
-        .reduce((sum, o) => sum + o.totalPrice, 0);
+        .filter(o => o.orderStatus === 'Completed')
+        .reduce((sum, o) => sum + o.price, 0);
 
-      const pendingOrders = orders.filter(o => o.status === 'pending').length;
-      const completedOrders = orders.filter(o => o.status === 'completed').length;
+      const pendingOrders = orders.filter(o => o.orderStatus === 'Pending').length;
+      const completedOrders = orders.filter(o => o.orderStatus === 'Completed').length;
 
       setStats({
         totalUsers: users.length,
@@ -199,17 +207,17 @@ const AdminDashboard = () => {
                   <tbody>
                     {recentOrders.map((order) => (
                       <tr key={order._id} className="border-b border-gray-700 hover:bg-gray-900/30">
-                        <td className="px-4 py-3 text-gray-300 font-mono text-sm">{order.orderNumber?.substring(0, 12)}...</td>
-                        <td className="px-4 py-3 text-white">{order.user?.username || 'Guest'}</td>
-                        <td className="px-4 py-3 text-white font-bold">${order.totalPrice}</td>
+                        <td className="px-4 py-3 text-gray-300 font-mono text-sm">{String(order._id).slice(-10).toUpperCase()}</td>
+                        <td className="px-4 py-3 text-white">{order.user?.fullName || 'Guest'}</td>
+                        <td className="px-4 py-3 text-white font-bold">LKR {order.price}</td>
                         <td className="px-4 py-3">
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            order.status === 'completed' ? 'bg-green-500/20 text-green-300' :
-                            order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                            order.status === 'processing' ? 'bg-blue-500/20 text-blue-300' :
+                            order.orderStatus === 'Completed' ? 'bg-green-500/20 text-green-300' :
+                            order.orderStatus === 'Pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                            order.orderStatus === 'Processing' ? 'bg-blue-500/20 text-blue-300' :
                             'bg-red-500/20 text-red-300'
                           }`}>
-                            {order.status}
+                            {order.orderStatus}
                           </span>
                         </td>
                       </tr>
