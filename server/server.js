@@ -9,10 +9,28 @@ require('dotenv').config();
 
 const app = express();
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://yathupubgstore.vercel.app',
+  process.env.CLIENT_URL,
+  ...(process.env.CLIENT_URLS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+].filter(Boolean);
+
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );

@@ -7,7 +7,7 @@ const AuthContext = createContext();
 
 const getStoredAdminToken = () => localStorage.getItem('adminToken') || localStorage.getItem('token');
 const getStoredUserToken = () => localStorage.getItem('userToken');
-const API_UNAVAILABLE_MESSAGE = 'Cannot reach the server. Make sure the backend is running on http://localhost:5001.';
+const API_UNAVAILABLE_MESSAGE = 'Cannot reach the server. Please check that the backend API is running and allowed for this website.';
 
 const initialState = {
   adminToken: getStoredAdminToken(),
