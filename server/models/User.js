@@ -53,6 +53,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    walletBalance: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
     signupVerificationCode: {
       type: String,
       select: false,
@@ -123,6 +128,7 @@ userSchema.methods.toSafeObject = function toSafeObject() {
     role: this.role,
     isEmailVerified: this.isEmailVerified,
     isBlocked: this.isBlocked,
+    walletBalance: this.walletBalance,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

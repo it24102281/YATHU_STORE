@@ -34,6 +34,7 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
   const customerInitial = customer?.fullName?.trim()?.charAt(0)?.toUpperCase() || 'U';
+  const formattedCustomerFunds = `LKR ${Number(customer?.walletBalance || 0).toLocaleString()}`;
 
   const handleAdminLogout = () => {
     logout();
@@ -50,8 +51,8 @@ const Navbar = () => {
     { name: 'Accounts', path: '/accounts' },
     { name: 'UC Packages', path: '/uc-packages' },
     { name: 'Featured Deals', path: '/services' },
+    { name: 'Social Booster', path: '/social-booster' },
     { name: 'Reviews', path: '/reviews' },
-    { name: 'Contact', path: '/contact' },
   ];
 
   const customerMenuItems = [
@@ -137,7 +138,11 @@ const Navbar = () => {
           {/* Right Actions */}
           <div className="hidden lg:flex items-center justify-end min-w-[140px]">
             {isUserAuthenticated ? (
-              <div className="relative">
+              <div className="relative flex items-center gap-3">
+                <div className="inline-flex h-12 items-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 text-sm font-bold text-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.12)]">
+                  <Wallet className="mr-2 h-4 w-4 text-emerald-300" />
+                  {formattedCustomerFunds}
+                </div>
                 <button
                   onClick={() => setIsCustomerMenuOpen((prev) => !prev)}
                   className="inline-flex h-14 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 transition-all duration-300 hover:border-purple-400/35 hover:bg-white/[0.06]"
@@ -272,7 +277,7 @@ const Navbar = () => {
                         </div>
                         <div>
                           <div className="text-sm font-semibold text-purple-400">{customer?.fullName}</div>
-                          <div className="text-xs text-gray-500">Customer Account</div>
+                          <div className="text-xs text-gray-500">{formattedCustomerFunds}</div>
                         </div>
                       </div>
                       {customerMenuItems.map((item) => (

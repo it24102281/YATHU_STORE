@@ -13,6 +13,7 @@ const formatUser = (user) => ({
   whatsappNumber: user.whatsappNumber,
   role: user.role,
   status: user.isBlocked ? 'Blocked' : 'Active',
+  walletBalance: Number(user.walletBalance || 0),
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -162,6 +163,41 @@ router.get('/users/:id/orders', adminMiddleware, async (req, res) => {
     success: true,
     data: orders,
   });
+});
+
+router.put('/users/:id/wallet', adminMiddleware, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const numericAmount = Number(amount);
+
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid wallet amount',
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.walletBalance = Number((Number(user.walletBalance || 0) + numericAmount).toFixed(2));
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Wallet funded successfully',
+      data: formatUser(user),
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: 'Failed to fund wallet',
+      error: error.message,
+    });
+  }
 });
 
 module.exports = router;

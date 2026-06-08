@@ -6,7 +6,9 @@ import {
   AlertCircle,
   Loader,
   Filter,
-  Eye
+  Eye,
+  Wallet,
+  Send
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -18,6 +20,7 @@ const AdminOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [submittingToCid, setSubmittingToCid] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -36,11 +39,11 @@ const AdminOrders = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId, newStatus, paymentStatus) => {
     try {
       await api.put(`/orders/${orderId}/status`, {
         orderStatus: newStatus,
-        paymentStatus: newStatus === 'Completed' ? 'Paid' : undefined
+        paymentStatus: paymentStatus || (newStatus === 'Completed' ? 'Paid' : undefined)
       });
       setSuccess('Order updated successfully!');
       fetchOrders();
@@ -48,6 +51,21 @@ const AdminOrders = () => {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError('Failed to update order');
+    }
+  };
+
+  const submitOrderToCid = async (orderId) => {
+    try {
+      setSubmittingToCid(true);
+      const response = await api.post(`/social/admin/submit-order/${orderId}`);
+      setSuccess(response.data?.message || 'Order submitted to CID successfully!');
+      fetchOrders();
+      setSelectedOrder(null);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit order to CID');
+    } finally {
+      setSubmittingToCid(false);
     }
   };
 
@@ -152,7 +170,7 @@ const AdminOrders = () => {
                 {/* Amount */}
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Amount</p>
-                  <p className="text-white font-bold text-lg">LKR {order.price}</p>
+                  <p className="text-white font-bold text-lg">Rs. {order.totalLkr || order.customerPrice || order.price} LKR</p>
                 </div>
 
                 {/* Status */}
@@ -162,6 +180,7 @@ const AdminOrders = () => {
                     {statusIcons[order.orderStatus]}
                     <span className="text-sm font-medium">{order.orderStatus}</span>
                   </div>
+                  <p className="mt-2 text-xs text-gray-400">Payment: {order.paymentStatus || 'Unpaid'}</p>
                 </div>
 
                 {/* Actions */}
@@ -203,13 +222,54 @@ const AdminOrders = () => {
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4">
                   <p className="text-xs text-gray-400 mb-1">Product</p>
-                  <p className="text-white">{selectedOrder.productName}</p>
+                  <p className="text-white">{selectedOrder.serviceName || selectedOrder.productName}</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4">
                   <p className="text-xs text-gray-400 mb-1">Amount</p>
-                  <p className="text-white font-bold">LKR {selectedOrder.price}</p>
+                  <p className="text-white font-bold">Rs. {selectedOrder.totalLkr || selectedOrder.customerPrice || selectedOrder.price} LKR</p>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-1">Platform</p>
+                  <p className="text-white">{selectedOrder.platform || 'General'}</p>
+                </div>
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-1">Quantity</p>
+                  <p className="text-white">{selectedOrder.quantity || '-'}</p>
+                </div>
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-1">Payment</p>
+                  <p className="text-white">{selectedOrder.paymentStatus || 'Unpaid'}</p>
+                </div>
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-1">CID Service ID</p>
+                  <p className="text-white">{selectedOrder.cidServiceId || selectedOrder.serviceId || '-'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-1">Price INR</p>
+                  <p className="text-white">Rs. {selectedOrder.priceInr || 0} INR</p>
+                </div>
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-1">Price LKR / 1000</p>
+                  <p className="text-white">Rs. {selectedOrder.priceLkr || 0} LKR</p>
+                </div>
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-1">CID Order ID</p>
+                  <p className="text-white">{selectedOrder.cidOrderId || '-'}</p>
+                </div>
+              </div>
+
+              {selectedOrder.link && (
+                <div className="bg-gray-800/30 rounded-lg p-4">
+                  <p className="text-xs text-gray-400 mb-2">Booster Link</p>
+                  <p className="text-white break-all">{selectedOrder.link}</p>
+                </div>
+              )}
 
               {/* Status Update */}
               <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-4">
@@ -229,6 +289,38 @@ const AdminOrders = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-4">
+                <p className="text-sm font-bold text-white mb-3">Payment Control</p>
+                <div className="flex gap-2 flex-wrap">
+                  {['Unpaid', 'Paid', 'Refunded'].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => updateOrderStatus(selectedOrder._id, selectedOrder.orderStatus, status)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                        selectedOrder.paymentStatus === status
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      <Wallet className="w-4 h-4" />
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-4">
+                <p className="text-sm font-bold text-white mb-3">CID Submission</p>
+                <button
+                  onClick={() => submitOrderToCid(selectedOrder._id)}
+                  disabled={submittingToCid || selectedOrder.paymentStatus !== 'Paid' || Boolean(selectedOrder.cidOrderId)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 bg-purple-600 text-white disabled:bg-gray-700 disabled:text-gray-400"
+                >
+                  <Send className="w-4 h-4" />
+                  {submittingToCid ? 'Submitting...' : selectedOrder.cidOrderId ? 'Already Sent to CID' : 'Submit Paid Order to CID'}
+                </button>
               </div>
 
               {/* Close Button */}

@@ -18,6 +18,7 @@ const getSafeUser = (user) => ({
   role: user.role,
   isEmailVerified: user.isEmailVerified,
   status: user.isBlocked ? 'Blocked' : 'Active',
+  walletBalance: Number(user.walletBalance || 0),
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });

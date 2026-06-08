@@ -6,7 +6,7 @@ import {
     Users,
     MessageSquare,
     LogOut,
-    Gamepad2,
+    Tag,
     Menu,
     X
 } from 'lucide-react';
@@ -25,7 +25,8 @@ const Sidebar = ({ mobileMenuOpen, setMobileMenuOpen }) => {
     const navItems = [
         { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { path: '/admin/accounts', icon: Users, label: 'Accounts' },
-        { path: '/admin/contacts', icon: MessageSquare, label: 'Contacts' }
+        { path: '/admin/contacts', icon: MessageSquare, label: 'Contacts' },
+        { path: '/admin/offers', icon: Tag, label: 'Social Pricing' }
     ];
 
     return (

@@ -20,6 +20,7 @@ import Services from './pages/Services';
 import SoldProofs from './pages/SoldProofs';
 import FAQ from './pages/FAQ';
 import Reviews from './pages/Reviews';
+import SocialBooster from './pages/SocialBooster';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -49,7 +50,7 @@ import RequireUserAuth from './components/RequireUserAuth';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router future={{ v7_relativeSplatPath: true }}>
         <ScrollToTop />
         <div className="min-h-screen bg-black text-white">
           <AnimatePresence mode="wait">
@@ -62,6 +63,7 @@ function App() {
                 <Route path="/uc-packages" element={<UCPackages />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/services" element={<Services />} />
+                <Route path="/social-booster" element={<RequireUserAuth><SocialBooster /></RequireUserAuth>} />
                 <Route path="/sold-proofs" element={<SoldProofs />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/faq" element={<FAQ />} />

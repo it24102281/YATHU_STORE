@@ -20,6 +20,7 @@ const AdminUsers = () => {
   const [userOrders, setUserOrders] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
+  const [walletTopUp, setWalletTopUp] = useState('');
   const [saving, setSaving] = useState(false);
 
   const fetchUsers = async (term = '') => {
@@ -68,6 +69,7 @@ const AdminUsers = () => {
       role: user.role,
       isBlocked: user.status === 'Blocked',
     });
+    setWalletTopUp('');
   };
 
   const closeModals = () => {
@@ -75,6 +77,7 @@ const AdminUsers = () => {
     setUserOrders([]);
     setEditingUser(null);
     setEditForm(emptyEditForm);
+    setWalletTopUp('');
   };
 
   const saveUser = async () => {
@@ -86,6 +89,33 @@ const AdminUsers = () => {
       setEditingUser(null);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const fundWallet = async () => {
+    const amount = Number(walletTopUp);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error('Enter a valid wallet amount');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const res = await api.put(
+        `/admin/users/${editingUser.id}/wallet`,
+        { amount },
+        { headers: getAuthHeaders() }
+      );
+
+      setUsers((prev) => prev.map((user) => (user.id === editingUser.id ? res.data.data : user)));
+      setEditingUser((prev) => (prev ? res.data.data : prev));
+      setWalletTopUp('');
+      toast.success(res.data?.message || 'Wallet funded successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to fund wallet');
     } finally {
       setSaving(false);
     }
@@ -143,6 +173,7 @@ const AdminUsers = () => {
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">WhatsApp</th>
                 <th className="px-6 py-4">Role</th>
+                <th className="px-6 py-4">Wallet</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Created</th>
                 <th className="px-6 py-4 text-right">Actions</th>
@@ -150,15 +181,16 @@ const AdminUsers = () => {
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
-                <tr><td colSpan="7" className="py-20 text-center text-gray-500">Loading users...</td></tr>
+                <tr><td colSpan="8" className="py-20 text-center text-gray-500">Loading users...</td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan="7" className="py-20 text-center text-gray-500">No users found</td></tr>
+                <tr><td colSpan="8" className="py-20 text-center text-gray-500">No users found</td></tr>
               ) : filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-6 py-4 text-white font-medium">{user.fullName}</td>
                   <td className="px-6 py-4 text-gray-300">{user.email}</td>
                   <td className="px-6 py-4 text-gray-300">{user.whatsappNumber}</td>
                   <td className="px-6 py-4 text-purple-300 font-semibold capitalize">{user.role}</td>
+                  <td className="px-6 py-4 text-emerald-300 font-semibold">LKR {Number(user.walletBalance || 0).toLocaleString()}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-xs rounded-lg font-bold border ${user.status === 'Blocked' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}`}>
                       {user.status}
@@ -203,7 +235,8 @@ const AdminUsers = () => {
               <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-gray-300">WhatsApp: {selectedUser.whatsappNumber}</div>
               <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-gray-300">Role: {selectedUser.role}</div>
               <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-gray-300">Status: {selectedUser.status}</div>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-gray-300">Created: {new Date(selectedUser.createdAt).toLocaleString()}</div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-emerald-300">Wallet: LKR {Number(selectedUser.walletBalance || 0).toLocaleString()}</div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-gray-300 sm:col-span-2">Created: {new Date(selectedUser.createdAt).toLocaleString()}</div>
             </div>
 
             <div className="mt-6">
@@ -251,6 +284,29 @@ const AdminUsers = () => {
                 <input type="checkbox" checked={editForm.isBlocked} onChange={(e) => setEditForm((prev) => ({ ...prev, isBlocked: e.target.checked }))} />
                 Block this user
               </label>
+              <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
+                <div className="text-sm font-semibold text-emerald-200">Wallet Balance</div>
+                <div className="mt-1 text-2xl font-black text-white">LKR {Number(editingUser?.walletBalance || 0).toLocaleString()}</div>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={walletTopUp}
+                    onChange={(e) => setWalletTopUp(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white"
+                    placeholder="Add wallet amount"
+                  />
+                  <button
+                    type="button"
+                    onClick={fundWallet}
+                    disabled={saving}
+                    className="rounded-2xl bg-emerald-500/15 px-5 py-3 font-bold text-emerald-200 transition hover:bg-emerald-500/25 disabled:opacity-60"
+                  >
+                    Add Funds
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-3">

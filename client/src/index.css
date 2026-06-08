@@ -194,6 +194,436 @@ body {
   opacity: 0.3;
 }
 
+.hero-nebula {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  animation: heroNebulaDrift 18s ease-in-out infinite;
+}
+
+.hero-light-beam {
+  position: absolute;
+  width: 140px;
+  background: linear-gradient(180deg, rgba(192, 132, 252, 0.22), rgba(139, 92, 246, 0.02));
+  filter: blur(18px);
+  transform-origin: top center;
+  animation: heroBeamPulse 14s ease-in-out infinite;
+}
+
+.hero-star-particle,
+.hero-neon-particle,
+.hero-geo-shape,
+.hero-wireframe-cube,
+.hero-hud-element,
+.hero-data-stream,
+.hero-sparkle-burst,
+.hero-lens-flare,
+.hero-electric-arc {
+  position: absolute;
+  pointer-events: none;
+}
+
+.hero-star-particle {
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  animation-name: heroTwinkle, heroParticleFloat;
+  animation-timing-function: ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+.hero-neon-particle {
+  border-radius: 9999px;
+  animation-name: heroSoftPulse, heroParticleFloat;
+  animation-timing-function: ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+.hero-geo-shape {
+  color: rgba(216, 180, 254, 0.5);
+  border: 1px solid currentColor;
+  animation-name: heroShapeFloat;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.hero-geo-dot {
+  border-radius: 9999px;
+  background: rgba(216, 180, 254, 0.65);
+  border: none;
+  box-shadow: 0 0 12px rgba(216, 180, 254, 0.5);
+}
+
+.hero-geo-ring {
+  border-radius: 9999px;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.18);
+}
+
+.hero-geo-cross::before,
+.hero-geo-cross::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px rgba(216, 180, 254, 0.2);
+}
+
+.hero-geo-cross::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.hero-geo-cross {
+  border: none;
+}
+
+.hero-geo-triangle {
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 14px solid rgba(216, 180, 254, 0.32);
+  background: transparent;
+  box-shadow: none;
+}
+
+.hero-geo-hex {
+  border-radius: 4px;
+  clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+}
+
+.hero-wireframe-cube {
+  border: 1px solid rgba(216, 180, 254, 0.32);
+  box-shadow: inset 0 0 8px rgba(168, 85, 247, 0.08), 0 0 14px rgba(168, 85, 247, 0.12);
+  transform-style: preserve-3d;
+  animation: heroCubeRotate ease-in-out infinite;
+}
+
+.hero-wireframe-cube::before,
+.hero-wireframe-cube::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(216, 180, 254, 0.24);
+}
+
+.hero-wireframe-cube::before {
+  transform: translate(5px, -5px);
+}
+
+.hero-wireframe-cube::after {
+  transform: translate(10px, -10px);
+  opacity: 0.42;
+}
+
+.hero-hud-element {
+  border: 1px solid rgba(192, 132, 252, 0.26);
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.04), rgba(216, 180, 254, 0.08), rgba(168, 85, 247, 0.04));
+  box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.06), 0 0 16px rgba(168, 85, 247, 0.06);
+  animation: heroHudFade ease-in-out infinite;
+}
+
+.hero-hud-element::before,
+.hero-hud-element::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 1px;
+  background: rgba(216, 180, 254, 0.32);
+}
+
+.hero-hud-element::before {
+  left: 8px;
+}
+
+.hero-hud-element::after {
+  right: 8px;
+}
+
+.hero-data-stream {
+  width: 1px;
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0), rgba(216, 180, 254, 0.35), rgba(168, 85, 247, 0));
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.14);
+  animation: heroDataStream ease-in-out infinite;
+}
+
+.hero-sparkle-burst {
+  animation: heroSparkleBurst ease-in-out infinite;
+}
+
+.hero-sparkle-burst::before,
+.hero-sparkle-burst::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  transform: translate(-50%, -50%);
+}
+
+.hero-sparkle-burst::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.hero-lens-flare {
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(243, 232, 255, 0.4) 0%, rgba(168, 85, 247, 0.12) 35%, transparent 70%);
+  filter: blur(6px);
+  animation: heroLensPulse ease-in-out infinite;
+}
+
+.hero-electric-arc {
+  width: 144px;
+  height: 144px;
+  border: 1px solid rgba(168, 85, 247, 0.1);
+  opacity: 0;
+  filter: blur(0.2px);
+  animation: heroArcFlicker 9s ease-in-out infinite;
+}
+
+.hero-electric-arc::before,
+.hero-electric-arc::after {
+  content: '';
+  position: absolute;
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0), rgba(216, 180, 254, 0.75), rgba(168, 85, 247, 0));
+  box-shadow: 0 0 12px rgba(216, 180, 254, 0.2);
+}
+
+.hero-electric-arc::before {
+  width: 88px;
+  height: 1px;
+}
+
+.hero-electric-arc::after {
+  width: 1px;
+  height: 88px;
+}
+
+.hero-electric-arc-top-left {
+  top: 4%;
+  left: 3%;
+}
+
+.hero-electric-arc-top-left::before {
+  top: 0;
+  left: 0;
+}
+
+.hero-electric-arc-top-left::after {
+  top: 0;
+  left: 0;
+}
+
+.hero-electric-arc-top-right {
+  top: 4%;
+  right: 3%;
+}
+
+.hero-electric-arc-top-right::before {
+  top: 0;
+  right: 0;
+}
+
+.hero-electric-arc-top-right::after {
+  top: 0;
+  right: 0;
+}
+
+.hero-electric-arc-bottom-left {
+  bottom: 4%;
+  left: 3%;
+}
+
+.hero-electric-arc-bottom-left::before {
+  bottom: 0;
+  left: 0;
+}
+
+.hero-electric-arc-bottom-left::after {
+  bottom: 0;
+  left: 0;
+}
+
+.hero-electric-arc-bottom-right {
+  bottom: 4%;
+  right: 3%;
+}
+
+.hero-electric-arc-bottom-right::before {
+  bottom: 0;
+  right: 0;
+}
+
+.hero-electric-arc-bottom-right::after {
+  bottom: 0;
+  right: 0;
+}
+
+@keyframes heroTwinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes heroSoftPulse {
+  0%, 100% {
+    opacity: 0.24;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes heroParticleFloat {
+  0%, 100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+@keyframes heroShapeFloat {
+  0%, 100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -12px;
+  }
+}
+
+@keyframes heroNebulaDrift {
+  0%, 100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.06) translate3d(14px, -18px, 0);
+  }
+}
+
+@keyframes heroBeamPulse {
+  0%, 100% {
+    opacity: 0.06;
+  }
+  50% {
+    opacity: 0.16;
+  }
+}
+
+@keyframes heroCubeRotate {
+  0%, 100% {
+    transform: perspective(200px) rotateX(0deg) rotateY(0deg) translateY(0);
+  }
+  50% {
+    transform: perspective(200px) rotateX(14deg) rotateY(18deg) translateY(-8px);
+  }
+}
+
+@keyframes heroHudFade {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  45% {
+    opacity: 0.28;
+  }
+  55% {
+    opacity: 0.16;
+  }
+}
+
+@keyframes heroDataStream {
+  0%, 100% {
+    opacity: 0.08;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.26;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes heroSparkleBurst {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  25% {
+    opacity: 0.32;
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+  70% {
+    opacity: 0.18;
+  }
+}
+
+@keyframes heroLensPulse {
+  0%, 100% {
+    opacity: 0.05;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.18;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes heroArcFlicker {
+  0%, 100% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.05;
+  }
+  24% {
+    opacity: 0.18;
+  }
+  27% {
+    opacity: 0.08;
+  }
+  52% {
+    opacity: 0.12;
+  }
+  56% {
+    opacity: 0.02;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-nebula {
+    filter: blur(48px);
+    opacity: 0.85;
+  }
+
+  .hero-light-beam {
+    width: 96px;
+    filter: blur(14px);
+  }
+
+  .hero-electric-arc,
+  .hero-wireframe-cube,
+  .hero-hud-element {
+    display: none;
+  }
+}
+
 /* THEJ'S Badge Styles */
 .badge-thej {
   padding: 6px 14px;

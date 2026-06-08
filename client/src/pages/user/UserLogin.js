@@ -10,9 +10,12 @@ const UserLogin = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [adminHintVisible, setAdminHintVisible] = useState(false);
   const { userLogin, isUserAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const normalizedIdentifier = identifier.trim().toLowerCase();
+  const looksLikeAdminEmail = normalizedIdentifier === 'admin@yathupubg.com' || normalizedIdentifier.startsWith('admin@');
 
   useEffect(() => {
     if (isUserAuthenticated) {
@@ -22,16 +25,25 @@ const UserLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (looksLikeAdminEmail) {
+      setAdminHintVisible(true);
+      toast.error('This page is for customers only. Admins must use /admin/login');
+      return;
+    }
+
     setSubmitting(true);
 
     const result = await userLogin(identifier, password);
     setSubmitting(false);
 
     if (!result.success) {
+      setAdminHintVisible(false);
       toast.error(result.message);
       return;
     }
 
+    setAdminHintVisible(false);
     toast.success('Login successful');
     navigate(location.state?.from?.pathname || '/', { replace: true });
   };
@@ -92,12 +104,28 @@ const UserLogin = () => {
                   <input
                     type="text"
                     value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    onChange={(e) => {
+                      const nextValue = e.target.value;
+                      setIdentifier(nextValue);
+                      const nextNormalizedIdentifier = nextValue.trim().toLowerCase();
+                      setAdminHintVisible(
+                        nextNormalizedIdentifier === 'admin@yathupubg.com' || nextNormalizedIdentifier.startsWith('admin@')
+                      );
+                    }}
                     className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-white outline-none transition placeholder:text-gray-500 focus:border-purple-400/50 focus:bg-white/[0.08]"
                     placeholder="Email or WhatsApp number"
                     required
                   />
                 </div>
+                {adminHintVisible && (
+                  <div className="mt-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                    This page is for customers only. If you are an admin, please use{' '}
+                    <Link to="/admin/login" className="font-semibold text-white underline underline-offset-4">
+                      /admin/login
+                    </Link>
+                    .
+                  </div>
+                )}
               </div>
 
               <div>

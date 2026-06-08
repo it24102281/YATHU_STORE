@@ -3,6 +3,7 @@ const validator = require('validator');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const { userMiddleware } = require('../middleware/auth');
+const { getResellerOrderStatus } = require('../services/resellerClient');
 
 const router = express.Router();
 
@@ -16,9 +17,28 @@ const getSafeUser = (user) => ({
   whatsappNumber: user.whatsappNumber,
   role: user.role,
   status: user.isBlocked ? 'Blocked' : 'Active',
+  walletBalance: Number(user.walletBalance || 0),
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
+
+const firstPresent = (...values) => {
+  const value = values.find((item) => item !== undefined && item !== null && item !== '');
+  return value === undefined ? '' : value;
+};
+
+const toDisplayValue = (value, fallback = '-') => {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  return String(value);
+};
+
+const toFiniteNumber = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+};
 
 router.get('/profile', userMiddleware, async (req, res) => {
   return res.json({
@@ -116,19 +136,80 @@ router.put('/change-password', userMiddleware, async (req, res) => {
 
 router.get('/orders', userMiddleware, async (req, res) => {
   const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+  const syncedOrders = await Promise.all(
+    orders.map(async (order) => {
+      if (!order.cidOrderId) {
+        return { order, resellerStatus: null };
+      }
+
+      try {
+        const resellerStatus = await getResellerOrderStatus(order.cidOrderId);
+        const resellerStatusText = resellerStatus.status || order.orderStatus;
+        const nextCharge = toFiniteNumber(resellerStatus.charge);
+        const nextStartCount = toFiniteNumber(firstPresent(resellerStatus.start_count, resellerStatus.startCount));
+        const nextRemains = toFiniteNumber(resellerStatus.remains);
+
+        order.orderStatus = resellerStatusText;
+        if (nextCharge !== null) order.charge = nextCharge;
+        if (nextStartCount !== null) order.startCount = nextStartCount;
+        if (nextRemains !== null) order.remains = nextRemains;
+        order.apiError = '';
+        await order.save();
+
+        return { order, resellerStatus };
+      } catch (error) {
+        order.apiError = error.message || order.apiError;
+      }
+
+      return { order, resellerStatus: null };
+    })
+  );
 
   return res.json({
     success: true,
-    data: orders.map((order) => ({
+    data: syncedOrders.map(({ order, resellerStatus }) => {
+      const cidQuantity = firstPresent(resellerStatus?.quantity, resellerStatus?.qty, resellerStatus?.amount);
+      const cidStartCount = firstPresent(resellerStatus?.start_count, resellerStatus?.startCount);
+      const cidRemains = firstPresent(resellerStatus?.remains);
+      const displayQuantity = toDisplayValue(cidQuantity, String(order.quantity || 0));
+      const displayRemains = toDisplayValue(cidRemains, order.cidOrderId ? '-' : String(order.remains || 0));
+      const displayStart = toDisplayValue(cidStartCount, order.startCount ? String(order.startCount) : '-');
+      const numericStart = toFiniteNumber(displayStart);
+      const numericQuantity = toFiniteNumber(displayQuantity);
+      const numericRemains = toFiniteNumber(displayRemains);
+      const displayEnd =
+        numericStart !== null && numericQuantity !== null && numericRemains !== null
+          ? String(numericStart + numericQuantity - numericRemains)
+          : toDisplayValue(firstPresent(resellerStatus?.end, resellerStatus?.end_count, resellerStatus?.endCount), '-');
+
+      return {
       id: order._id,
-      orderId: String(order._id).slice(-8).toUpperCase(),
+      orderId: order.cidOrderId || String(order._id).slice(-8).toUpperCase(),
+      localOrderId: String(order._id).slice(-8).toUpperCase(),
       productName: order.productName,
+      serviceName: order.serviceName,
+      cidServiceId: order.cidServiceId,
       category: order.category,
+      platform: order.platform,
+      quantity: order.quantity,
+      cidQuantity: displayQuantity,
+      cidRemains: displayRemains,
+      cidStartCount: displayStart,
+      cidEndCount: displayEnd,
+      link: order.link,
       price: order.price,
+      customerPrice: order.customerPrice,
+      priceLkr: order.priceLkr,
+      totalLkr: order.totalLkr,
       paymentStatus: order.paymentStatus,
       orderStatus: order.orderStatus,
+      cidOrderId: order.cidOrderId,
+      charge: order.charge,
+      startCount: order.startCount,
+      remains: order.remains,
       createdAt: order.createdAt,
-    })),
+      };
+    }),
   });
 });
 

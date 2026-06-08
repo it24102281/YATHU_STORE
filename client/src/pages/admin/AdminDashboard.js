@@ -290,7 +290,7 @@ const AdminDashboard = () => {
                 href="/admin/offers"
                 className="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
               >
-                Manage Offers
+                Social Pricing
               </a>
             </div>
           </motion.div>

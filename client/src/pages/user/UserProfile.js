@@ -431,8 +431,8 @@ const UserProfile = () => {
                   <Wallet className="h-5 w-5 text-emerald-300" />
                 </div>
                 <div>
-                  <div className="text-sm text-gray-400">Funds Added</div>
-                  <div className="text-lg font-bold text-white">LKR {fundSummary.totalPaid.toLocaleString()}</div>
+                  <div className="text-sm text-gray-400">Wallet Balance</div>
+                  <div className="text-lg font-bold text-white">LKR {Number(customer?.walletBalance || 0).toLocaleString()}</div>
                 </div>
               </div>
             </div>

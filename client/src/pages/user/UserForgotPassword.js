@@ -19,7 +19,7 @@ const UserForgotPassword = () => {
       setDevResetUrl(response?.data?.resetUrl || '');
       toast.success(response.message || 'Reset link sent to your email');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send reset link');
+      toast.error(error.message || 'Failed to send reset link');
     } finally {
       setSubmitting(false);
     }

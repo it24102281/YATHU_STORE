@@ -7,6 +7,7 @@ const AuthContext = createContext();
 
 const getStoredAdminToken = () => localStorage.getItem('adminToken') || localStorage.getItem('token');
 const getStoredUserToken = () => localStorage.getItem('userToken');
+const API_UNAVAILABLE_MESSAGE = 'Cannot reach the server. Make sure the backend is running on http://localhost:5001.';
 
 const initialState = {
   adminToken: getStoredAdminToken(),
@@ -187,6 +188,14 @@ const withUserHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const getRequestErrorMessage = (err, fallbackMessage) => {
+  if (!err.response) {
+    return API_UNAVAILABLE_MESSAGE;
+  }
+
+  return err.response?.data?.message || fallbackMessage;
+};
+
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
@@ -208,7 +217,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: 'ADMIN_LOAD_FAIL',
-        payload: 'Token is invalid or expired',
+        payload: getRequestErrorMessage(err, 'Token is invalid or expired'),
       });
     }
   };
@@ -231,7 +240,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: 'USER_LOAD_FAIL',
-        payload: 'User session is invalid or expired',
+        payload: getRequestErrorMessage(err, 'User session is invalid or expired'),
       });
     }
   };
@@ -254,7 +263,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, data: res.data };
     } catch (err) {
-      const message = err.response?.data?.message || 'Login failed';
+      const message = getRequestErrorMessage(err, 'Login failed');
       dispatch({
         type: 'ADMIN_LOGIN_FAIL',
         payload: message,
@@ -277,7 +286,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, message: res.data?.message || 'Login successful', data: user };
     } catch (err) {
-      const message = err.response?.data?.message || 'Invalid login details';
+      const message = getRequestErrorMessage(err, 'Invalid login details');
       dispatch({
         type: 'USER_LOGIN_FAIL',
         payload: message,
@@ -302,8 +311,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const forgotPassword = async (email) => {
-    const res = await api.post('/auth/user/forgot-password', { email });
-    return res.data;
+    try {
+      const res = await api.post('/auth/user/forgot-password', { email });
+      return res.data;
+    } catch (err) {
+      throw new Error(getRequestErrorMessage(err, 'Failed to send reset link'));
+    }
   };
 
   const resetPassword = async (payload) => {

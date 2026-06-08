@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useInView, useSpring, useMotionValue, animate } from 'framer-motion';
+import { motion, useInView, animate } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Shield,
@@ -21,6 +21,179 @@ import {
 import AccountCard from '../components/AccountCard';
 import FeaturedDeals from '../components/FeaturedDeals';
 import { useAuth } from '../context/AuthContext';
+
+const createNetworkParticles = (width, height) => {
+  const isMobile = width < 768;
+  const count = isMobile ? 84 : 140;
+
+  return Array.from({ length: count }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.18),
+    vy: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.18),
+    radius: Math.random() * 0.8 + (isMobile ? 2.2 : 3),
+    glow: Math.random() * 0.14 + 0.46,
+  }));
+};
+
+const HeroNetworkBackground = ({ heroRef }) => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const heroElement = heroRef.current;
+    const canvas = canvasRef.current;
+    if (!heroElement || !canvas) return undefined;
+
+    const context = canvas.getContext('2d');
+    if (!context) return undefined;
+
+    let animationFrameId = 0;
+    let particles = [];
+    let width = 0;
+    let height = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+    let targetX = 0;
+    let targetY = 0;
+
+    const resizeCanvas = () => {
+      const bounds = heroElement.getBoundingClientRect();
+      width = bounds.width;
+      height = bounds.height;
+
+      const devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      canvas.width = width * devicePixelRatio;
+      canvas.height = height * devicePixelRatio;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+      particles = createNetworkParticles(width, height);
+    };
+
+    const drawFrame = () => {
+      context.clearRect(0, 0, width, height);
+
+      pointerX += (targetX - pointerX) * 0.03;
+      pointerY += (targetY - pointerY) * 0.03;
+
+      const connectionDistance = width < 768 ? 100 : 145;
+      const parallaxStrength = width < 768 ? 4 : 8;
+
+      for (let index = 0; index < particles.length; index += 1) {
+        const particle = particles[index];
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+
+        if (particle.x < -20 || particle.x > width + 20) particle.vx *= -1;
+        if (particle.y < -20 || particle.y > height + 20) particle.vy *= -1;
+
+        for (let next = index + 1; next < particles.length; next += 1) {
+          const neighbor = particles[next];
+          const distanceX = particle.x - neighbor.x;
+          const distanceY = particle.y - neighbor.y;
+          const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+
+          if (distance < connectionDistance) {
+            const opacity = (1 - distance / connectionDistance) * 0.22;
+            const gradient = context.createLinearGradient(
+              particle.x,
+              particle.y,
+              neighbor.x,
+              neighbor.y
+            );
+            gradient.addColorStop(0, `rgba(168, 85, 247, ${opacity})`);
+            gradient.addColorStop(0.5, `rgba(192, 132, 252, ${Math.min(opacity + 0.04, 0.28)})`);
+            gradient.addColorStop(1, `rgba(216, 180, 254, ${opacity})`);
+            context.strokeStyle = gradient;
+            context.lineWidth = 0.9;
+            context.beginPath();
+            context.moveTo(particle.x, particle.y);
+            context.lineTo(neighbor.x, neighbor.y);
+            context.stroke();
+
+            context.beginPath();
+            context.fillStyle = `rgba(192, 132, 252, ${Math.min(opacity + 0.08, 0.2)})`;
+            context.shadowBlur = 6;
+            context.shadowColor = 'rgba(192, 132, 252, 0.2)';
+            context.arc(particle.x, particle.y, particle.radius * 0.55, 0, Math.PI * 2);
+            context.fill();
+          }
+        }
+      }
+
+      particles.forEach((particle) => {
+        const drawX = particle.x + pointerX * parallaxStrength;
+        const drawY = particle.y + pointerY * parallaxStrength;
+
+        context.beginPath();
+        context.fillStyle = `rgba(168, 85, 247, ${particle.glow})`;
+        context.shadowBlur = 12;
+        context.shadowColor = 'rgba(168, 85, 247, 0.38)';
+        context.arc(drawX, drawY, particle.radius, 0, Math.PI * 2);
+        context.fill();
+
+        context.beginPath();
+        context.fillStyle = 'rgba(216, 180, 254, 0.68)';
+        context.shadowBlur = 0;
+        context.arc(drawX, drawY, Math.max(0.6, particle.radius * 0.48), 0, Math.PI * 2);
+        context.fill();
+      });
+
+      animationFrameId = window.requestAnimationFrame(drawFrame);
+    };
+
+    const handleMouseMove = (event) => {
+      const bounds = heroElement.getBoundingClientRect();
+      targetX = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
+      targetY = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
+    };
+
+    const resetPointer = () => {
+      targetX = 0;
+      targetY = 0;
+    };
+
+    resizeCanvas();
+    drawFrame();
+
+    const resizeObserver = new ResizeObserver(() => resizeCanvas());
+    resizeObserver.observe(heroElement);
+
+    heroElement.addEventListener('mousemove', handleMouseMove);
+    heroElement.addEventListener('mouseleave', resetPointer);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+      heroElement.removeEventListener('mousemove', handleMouseMove);
+      heroElement.removeEventListener('mouseleave', resetPointer);
+    };
+  }, [heroRef]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(135deg, #060608 0%, #0b0815 45%, #060608 100%)' }}
+      />
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(139,92,246,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.035) 1px, transparent 1px)',
+          backgroundSize: '72px 72px',
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-70"
+        style={{ background: 'radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 26%), radial-gradient(circle at 80% 18%, rgba(168, 85, 247, 0.11) 0%, transparent 22%), radial-gradient(circle at 52% 74%, rgba(139, 92, 246, 0.09) 0%, transparent 28%)' }}
+      />
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full opacity-80" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,8,0.38)_0%,rgba(4,4,8,0.18)_30%,rgba(4,4,8,0.44)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(3,3,6,0.14)_56%,rgba(3,3,6,0.34)_100%)]" />
+    </div>
+  );
+};
 
 /* ── Animated counter hook ─────────────────────────────────────── */
 const useCounter = (target, duration = 1800) => {
@@ -108,6 +281,7 @@ const Home = () => {
   const [featuredAccounts, setFeaturedAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { api } = useAuth();
+  const heroRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -153,19 +327,8 @@ const Home = () => {
     <div className="min-h-screen" style={{ background: '#0a0a0a', fontFamily: 'Poppins, sans-serif' }}>
 
       {/* ── HERO ────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ minHeight: '100vh', paddingTop: 80 }}>
-        {/* Background */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #0f0a1e 45%, #0a0a0a 100%)' }} />
-        {/* Grid */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }} />
-        {/* Glow orbs */}
-        <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.6, 0.4] }} transition={{ duration: 8, repeat: Infinity }}
-          className="absolute" style={{ top: '-10%', left: '-5%', width: 600, height: 600, background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)', borderRadius: '50%' }} />
-        <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 10, repeat: Infinity, delay: 2 }}
-          className="absolute" style={{ bottom: '-10%', right: '-5%', width: 700, height: 700, background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
+      <section ref={heroRef} className="relative overflow-hidden" style={{ minHeight: '100vh', paddingTop: 80 }}>
+        <HeroNetworkBackground heroRef={heroRef} />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center" style={{ minHeight: 'calc(100vh - 80px)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center w-full py-16">
