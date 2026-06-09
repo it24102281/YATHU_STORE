@@ -6,6 +6,7 @@ import {
   Loader2,
   Lock,
   LogIn,
+  Plus,
   Search,
   ShieldCheck,
   Sparkles,
@@ -14,6 +15,7 @@ import {
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import WalletTopUpModal from '../components/WalletTopUpModal';
 
 const platformOptions = ['All', 'TikTok', 'Instagram', 'Facebook', 'YouTube', 'Twitter/X', 'Social Media'];
 const SELLING_PRICE_OVERRIDES = {
@@ -103,6 +105,7 @@ const SocialBooster = () => {
   const [quantity, setQuantity] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [isWalletTopUpOpen, setIsWalletTopUpOpen] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -514,6 +517,14 @@ const SocialBooster = () => {
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100">
                   <ShieldCheck className="h-4 w-4" />
                   Wallet Balance: {formatLkr(walletBalance)}
+                  <button
+                    type="button"
+                    onClick={() => setIsWalletTopUpOpen(true)}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 transition hover:border-emerald-300/50 hover:bg-emerald-400/20"
+                    aria-label="Add funds to wallet"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
                 </div>
               ) : (
                 <div className="mt-4 rounded-[18px] border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm font-semibold text-amber-100">
@@ -684,6 +695,12 @@ const SocialBooster = () => {
           </div>
         </div>
       </section>
+      <WalletTopUpModal
+        isOpen={isWalletTopUpOpen}
+        onClose={() => setIsWalletTopUpOpen(false)}
+        customerName={customer?.fullName || 'Customer'}
+        currentBalance={walletBalance}
+      />
     </div>
   );
 };

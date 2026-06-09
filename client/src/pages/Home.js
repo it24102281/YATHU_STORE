@@ -475,6 +475,61 @@ const Home = () => {
 
   return (
     <div className="min-h-screen" style={{ background: '#0a0a0a', fontFamily: 'Poppins, sans-serif' }}>
+      <style>{`
+        .home-typing-line {
+          display: block;
+          width: 15ch;
+          min-height: 1em;
+        }
+
+        .home-typing-loop {
+          display: inline-block;
+          overflow: hidden;
+          white-space: nowrap;
+          border-right: 3px solid rgba(216, 180, 254, 0.92);
+          animation: typing 3s steps(15, end) infinite, homeTypingCaret 0.8s step-end infinite;
+        }
+
+        @keyframes typing {
+          0%,
+          12% {
+            width: 0;
+          }
+
+          42%,
+          68% {
+            width: 15ch;
+          }
+
+          100% {
+            width: 0;
+          }
+        }
+
+        @keyframes homeTypingCaret {
+          0%,
+          49% {
+            border-right-color: rgba(216, 180, 254, 0.92);
+          }
+
+          50%,
+          100% {
+            border-right-color: transparent;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .home-typing-line {
+            width: auto;
+          }
+
+          .home-typing-loop {
+            width: auto;
+            border-right: none;
+            animation: none;
+          }
+        }
+      `}</style>
 
       {/* ── HERO ────────────────────────────────────────────────── */}
       <section
@@ -513,17 +568,19 @@ const Home = () => {
                   }}
                 >
                   <span className="block text-white">Premium</span>
-                  <span
-                    className="block whitespace-nowrap"
-                    style={{
-                      background: 'linear-gradient(135deg,#8b5cf6,#a855f7,#d8b4fe)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      textShadow: '0 0 24px rgba(168,85,247,0.42)',
-                    }}
-                  >
-                    Gaming & Social
+                  <span className="home-typing-line whitespace-nowrap">
+                    <span
+                      className="home-typing-loop"
+                      style={{
+                        background: 'linear-gradient(135deg,#8b5cf6,#a855f7,#d8b4fe)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        textShadow: '0 0 24px rgba(168,85,247,0.42)',
+                      }}
+                    >
+                      Gaming & Social
+                    </span>
                   </span>
                   <span
                     className="block"

@@ -10,13 +10,16 @@ import {
   Activity,
   FileText,
   ChevronDown,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import WalletTopUpModal from './WalletTopUpModal';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isCustomerMenuOpen, setIsCustomerMenuOpen] = useState(false);
+  const [isWalletTopUpOpen, setIsWalletTopUpOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { admin, customer, isAuthenticated, isUserAuthenticated, logout, userLogout } = useAuth();
@@ -132,9 +135,17 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center justify-end min-w-[140px]">
             {isUserAuthenticated ? (
               <div className="relative flex items-center gap-3">
-                <div className="inline-flex h-12 items-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 text-sm font-bold text-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.12)]">
+                <div className="inline-flex h-12 items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 text-sm font-bold text-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.12)]">
                   <Wallet className="mr-2 h-4 w-4 text-emerald-300" />
                   {formattedCustomerFunds}
+                  <button
+                    type="button"
+                    onClick={() => setIsWalletTopUpOpen(true)}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 transition hover:border-emerald-300/50 hover:bg-emerald-400/20"
+                    aria-label="Add funds to wallet"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
                 </div>
                 <button
                   onClick={() => setIsCustomerMenuOpen((prev) => !prev)}
@@ -289,6 +300,15 @@ const Navbar = () => {
                         className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
                         Logout
                       </button>
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsWalletTopUpOpen(true);
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition-all duration-200"
+                      >
+                        Add Funds
+                      </button>
                     </>
                   ) : (
                     <>
@@ -305,6 +325,12 @@ const Navbar = () => {
           )}
         </AnimatePresence>
       </div>
+      <WalletTopUpModal
+        isOpen={isWalletTopUpOpen}
+        onClose={() => setIsWalletTopUpOpen(false)}
+        customerName={customer?.fullName || 'Customer'}
+        currentBalance={customer?.walletBalance || 0}
+      />
     </nav>
   );
 };

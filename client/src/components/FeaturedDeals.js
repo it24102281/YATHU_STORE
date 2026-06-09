@@ -36,6 +36,7 @@ const FeaturedDeals = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedDeal, setSelectedDeal] = useState(null);
+  const [activeCardId, setActiveCardId] = useState(null);
 
   const fetchDeals = async () => {
     try {
@@ -101,8 +102,209 @@ const FeaturedDeals = ({
     };
   };
 
+  const handleCardPointerMove = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    event.currentTarget.style.setProperty('--spotlight-x', `${x}px`);
+    event.currentTarget.style.setProperty('--spotlight-y', `${y}px`);
+  };
+
   return (
     <section className={compact ? 'py-16' : 'py-24'} style={{ background: 'linear-gradient(180deg, #0f0a1e 0%, #0a0a0a 100%)' }}>
+      <style>{`
+        .featured-deal-card {
+          --spotlight-x: 50%;
+          --spotlight-y: 50%;
+          transform: translateZ(0);
+          will-change: transform;
+          isolation: isolate;
+        }
+
+        .featured-deal-card::before {
+          content: "";
+          position: absolute;
+          inset: -1px;
+          border-radius: 1.55rem;
+          padding: 1px;
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.08), rgba(216, 180, 254, 0.18), rgba(139, 92, 246, 0.15));
+          background-size: 220% 220%;
+          opacity: 0;
+          transition: opacity 300ms ease, filter 300ms ease;
+          animation: featuredDealBorderFlow 6s linear infinite;
+          -webkit-mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+        }
+
+        .featured-deal-card::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 1.5rem;
+          background:
+            radial-gradient(280px circle at var(--spotlight-x) var(--spotlight-y), rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.11) 32%, rgba(139, 92, 246, 0.04) 52%, transparent 74%);
+          opacity: 0;
+          transition: opacity 300ms ease;
+          pointer-events: none;
+          mix-blend-mode: screen;
+        }
+
+        .featured-deal-card-surface {
+          position: relative;
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          min-height: 100%;
+          border-radius: 1.45rem;
+          overflow: hidden;
+          background: linear-gradient(145deg, rgba(139,92,246,0.1), rgba(12,12,18,0.95));
+          transition: background 300ms ease;
+        }
+
+        .featured-deal-card-surface::before {
+          content: "";
+          position: absolute;
+          top: -52px;
+          right: -44px;
+          width: 180px;
+          height: 180px;
+          border-radius: 999px;
+          background: radial-gradient(circle, rgba(192,132,252,0.11) 0%, transparent 72%);
+          filter: blur(22px);
+          transform: translate(0, 0) scale(1);
+          transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+          pointer-events: none;
+        }
+
+        .featured-deal-card-surface::after {
+          content: "";
+          position: absolute;
+          bottom: 92px;
+          left: -18px;
+          width: 82px;
+          height: 82px;
+          background: linear-gradient(135deg, rgba(192,132,252,0.08) 0%, transparent 62%);
+          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+          transform: rotate(0deg);
+          transition: transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
+          pointer-events: none;
+        }
+
+        .featured-deal-card:hover .featured-deal-card-surface,
+        .featured-deal-card.featured-deal-card-active .featured-deal-card-surface {
+          background: linear-gradient(145deg, rgba(30,18,41,0.98), rgba(12,12,18,0.96));
+        }
+
+        .featured-deal-card:hover .featured-deal-card-surface::before,
+        .featured-deal-card.featured-deal-card-active .featured-deal-card-surface::before {
+          transform: translate(-8px, 8px) scale(1.16);
+        }
+
+        .featured-deal-card:hover .featured-deal-card-surface::after,
+        .featured-deal-card.featured-deal-card-active .featured-deal-card-surface::after {
+          transform: rotate(18deg) translate(6px, -6px);
+        }
+
+        .featured-deal-card-image::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse 75% 70% at 50% 35%, rgba(192,132,252,0.14) 0%, transparent 70%);
+          opacity: 0.7;
+          transition: opacity 320ms ease;
+          pointer-events: none;
+        }
+
+        .featured-deal-card-image::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 64px;
+          background: linear-gradient(to top, rgba(12,12,18,0.95), transparent);
+          pointer-events: none;
+        }
+
+        .featured-deal-card:hover .featured-deal-card-image::before,
+        .featured-deal-card.featured-deal-card-active .featured-deal-card-image::before {
+          opacity: 1;
+        }
+
+        .featured-deal-card-title {
+          transition: filter 220ms ease;
+        }
+
+        .featured-deal-card:hover .featured-deal-card-title,
+        .featured-deal-card.featured-deal-card-active .featured-deal-card-title {
+          filter: brightness(1.08);
+        }
+
+        .featured-deal-card-desc {
+          transition: color 220ms ease;
+        }
+
+        .featured-deal-card:hover .featured-deal-card-desc,
+        .featured-deal-card.featured-deal-card-active .featured-deal-card-desc {
+          color: #baa8d6;
+        }
+
+        .featured-deal-card-cta {
+          position: relative;
+          overflow: hidden;
+          transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease, gap 220ms ease;
+        }
+
+        .featured-deal-card-cta::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -120%;
+          width: 60%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+          transition: left 550ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .featured-deal-card-cta:hover::before {
+          left: 170%;
+        }
+
+        .featured-deal-card-cta:hover {
+          box-shadow: 0 0 22px rgba(192,132,252,0.24), 0 10px 24px rgba(139,92,246,0.28);
+        }
+
+        .featured-deal-card:hover::before,
+        .featured-deal-card:active::before,
+        .featured-deal-card.featured-deal-card-active::before {
+          opacity: 1;
+          filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.42)) drop-shadow(0 0 28px rgba(168, 85, 247, 0.26));
+        }
+
+        .featured-deal-card:hover::after,
+        .featured-deal-card:active::after,
+        .featured-deal-card.featured-deal-card-active::after {
+          opacity: 1;
+        }
+
+        @keyframes featuredDealBorderFlow {
+          0% {
+            background-position: 0% 50%;
+          }
+
+          50% {
+            background-position: 100% 50%;
+          }
+
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}</style>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {showHeader && (
           <div className="text-center mb-12">
@@ -217,15 +419,25 @@ const FeaturedDeals = ({
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.06, duration: 0.35 }}
-                  whileHover={{ y: -8 }}
-                  className="group overflow-hidden rounded-3xl h-full flex flex-col"
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  whileTap={{ scale: 1.01 }}
+                  onMouseMove={handleCardPointerMove}
+                  onClick={() => setActiveCardId(deal._id)}
+                  className={`featured-deal-card group relative overflow-hidden rounded-3xl h-full flex flex-col cursor-pointer ${
+                    activeCardId === deal._id ? 'featured-deal-card-active' : ''
+                  }`}
                   style={{
-                    background: 'linear-gradient(145deg, rgba(139,92,246,0.1), rgba(12,12,18,0.95))',
+                    background: 'transparent',
                     border: '1px solid rgba(139,92,246,0.18)',
-                    boxShadow: '0 20px 45px rgba(0,0,0,0.24)',
+                    boxShadow:
+                      activeCardId === deal._id
+                        ? '0 24px 54px rgba(0,0,0,0.32), 0 0 0 1px rgba(139,92,246,0.3), 0 0 32px rgba(139,92,246,0.18)'
+                        : '0 20px 45px rgba(0,0,0,0.24)',
+                    transition: 'transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease',
                   }}
                 >
-                  <div className="relative h-52 overflow-hidden">
+                  <div className="featured-deal-card-surface">
+                  <div className="featured-deal-card-image relative h-52 overflow-hidden">
                     {deal.image ? (
                       <img
                         src={deal.image}
@@ -262,7 +474,7 @@ const FeaturedDeals = ({
                   <div className="p-6 flex flex-1 flex-col">
                     <div className="flex items-start justify-between gap-4 mb-3">
                       <div>
-                        <h3 className="text-xl font-black text-white leading-tight">{deal.title}</h3>
+                        <h3 className="featured-deal-card-title text-xl font-black text-white leading-tight">{deal.title}</h3>
                         <p className="text-sm text-purple-300 mt-1">{deal.subCategory || deal.category}</p>
                       </div>
                       <span
@@ -278,7 +490,7 @@ const FeaturedDeals = ({
                     </div>
 
                     <div className="min-h-[138px] mb-5 flex flex-col">
-                      <p className="text-sm text-gray-400 leading-relaxed">
+                      <p className="featured-deal-card-desc text-sm text-gray-400 leading-relaxed">
                         {descriptionPreview.text}
                       </p>
                       {descriptionPreview.truncated ? (
@@ -306,13 +518,14 @@ const FeaturedDeals = ({
                         href={buyLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5"
+                        className="featured-deal-card-cta inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5"
                         style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', boxShadow: '0 10px 24px rgba(139,92,246,0.28)' }}
                       >
                         Buy Now
                         <ArrowRight className="w-4 h-4" />
                       </a>
                     </div>
+                  </div>
                   </div>
                 </motion.div>
               );
