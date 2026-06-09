@@ -9,14 +9,12 @@ const UserForgotPassword = () => {
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [devResetUrl, setDevResetUrl] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSubmitting(true);
       const response = await forgotPassword(email);
-      setDevResetUrl(response?.data?.resetUrl || '');
       toast.success(response.message || 'Reset link sent to your email');
     } catch (error) {
       toast.error(error.message || 'Failed to send reset link');
@@ -57,12 +55,6 @@ const UserForgotPassword = () => {
               </span>
             </button>
           </form>
-
-          {devResetUrl && (
-            <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-200 break-all">
-              Development reset link: <a href={devResetUrl} className="underline">{devResetUrl}</a>
-            </div>
-          )}
         </div>
       </motion.div>
     </div>

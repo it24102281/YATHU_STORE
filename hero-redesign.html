@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yathu Official - Gaming Marketplace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg-base: #0a0a12;
+      --bg-surface: #12102a;
+      --accent-purple: #7c3aed;
+      --accent-purple-light: #a855f7;
+      --accent-purple-glow: rgba(124, 58, 237, 0.4);
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --green-whatsapp: #25D366;
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --surface-glass: rgba(18, 16, 42, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: "Inter", sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page-shell {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 76% 42%, rgba(124, 58, 237, 0.15), transparent 0 26rem),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 16rem),
+        var(--bg-base);
+      position: relative;
+      isolation: isolate;
+    }
+
+    .page-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.9) 1px, transparent 0),
+        linear-gradient(30deg, transparent 24%, rgba(168, 85, 247, 0.55) 25%, rgba(168, 85, 247, 0.55) 26%, transparent 27%, transparent 74%, rgba(168, 85, 247, 0.55) 75%, rgba(168, 85, 247, 0.55) 76%, transparent 77%, transparent),
+        linear-gradient(-30deg, transparent 24%, rgba(168, 85, 247, 0.55) 25%, rgba(168, 85, 247, 0.55) 26%, transparent 27%, transparent 74%, rgba(168, 85, 247, 0.55) 75%, rgba(168, 85, 247, 0.55) 76%, transparent 77%, transparent);
+      background-size: 22px 22px, 68px 118px, 68px 118px;
+      background-position: 0 0, 0 0, 34px 59px;
+      z-index: -2;
+    }
+
+    .page-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 74% 44%, rgba(124, 58, 237, 0.15), transparent 0 22rem);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(10, 10, 18, 0.82);
+      border-bottom: 1px solid rgba(124, 58, 237, 0.16);
+    }
+
+    .nav-inner,
+    .hero-inner {
+      width: min(1200px, calc(100% - 48px));
+      margin: 0 auto;
+    }
+
+    .nav-inner {
+      min-height: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-family: "Rajdhani", sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 0.9;
+      color: #d8b4fe;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.82rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav-link {
+      padding: 14px 18px;
+      border-radius: 18px;
+      color: rgba(255, 255, 255, 0.74);
+      font-weight: 700;
+      transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-link.is-active,
+    .nav-link:hover {
+      color: var(--text-primary);
+      border-color: rgba(168, 85, 247, 0.35);
+      background: rgba(124, 58, 237, 0.18);
+    }
+
+    .sign-in {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 28px;
+      border-radius: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-purple-light));
+      box-shadow: 0 18px 40px rgba(124, 58, 237, 0.28);
+    }
+
+    .hero {
+      min-height: calc(100vh - 92px);
+      display: flex;
+      align-items: center;
+      padding: 48px 0 72px;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
+      gap: 56px;
+      align-items: center;
+    }
+
+    .hero-copy {
+      max-width: 640px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 22px;
+      margin-bottom: 28px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.14);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      color: #d8b4fe;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #facc15, #fde68a);
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.6);
+    }
+
+    .headline {
+      margin: 0;
+      font-family: "Rajdhani", sans-serif;
+      font-size: clamp(3.5rem, 6vw, 6.6rem);
+      line-height: 0.92;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .headline-line {
+      display: block;
+      opacity: 0;
+      transform: translateY(32px);
+    }
+
+    .headline-line.is-accent {
+      color: #c084fc;
+      text-shadow:
+        0 0 12px rgba(168, 85, 247, 0.52),
+        0 0 34px rgba(124, 58, 237, 0.42);
+    }
+
+    .hero-subtitle {
+      margin: 28px 0 0;
+      max-width: 640px;
+      font-size: 1.2rem;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, max-content));
+      gap: 20px 46px;
+      margin: 38px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .trust-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: #f5f3ff;
+      font-weight: 700;
+      opacity: 0;
+      transform: translateY(22px);
+    }
+
+    .trust-icon {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      color: #c084fc;
+      transform-origin: center;
+    }
+
+    .trust-label {
+      position: relative;
+      display: inline-flex;
+      padding-bottom: 6px;
+    }
+
+    .trust-label::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(168, 85, 247, 0.95), transparent);
+      opacity: 0;
+      transform: scaleX(0.3);
+      transform-origin: left;
+      transition: opacity 180ms ease, transform 180ms ease;
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+    }
+
+    .trust-item:hover .trust-label::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 40px;
+    }
+
+    .cta {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-width: 270px;
+      padding: 20px 30px;
+      border-radius: 24px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        color 180ms ease,
+        border-color 180ms ease,
+        background-color 180ms ease;
+      overflow: hidden;
+    }
+
+    .cta:hover {
+      transform: scale(1.04);
+    }
+
+    .cta-primary {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-purple-light));
+      color: var(--text-primary);
+      box-shadow: 0 20px 42px rgba(124, 58, 237, 0.28);
+    }
+
+    .cta-primary::before {
+      content: "";
+      position: absolute;
+      inset: -140% auto -140% -32%;
+      width: 35%;
+      background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+      transform: rotate(18deg) translateX(-220%);
+      transition: transform 460ms ease;
+    }
+
+    .cta-primary:hover::before {
+      transform: rotate(18deg) translateX(520%);
+    }
+
+    .cta-secondary {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: transparent;
+      color: #dbeafe;
+      box-shadow: inset 0 0 0 1px rgba(37, 211, 102, 0);
+    }
+
+    .cta-secondary:hover {
+      border-color: rgba(37, 211, 102, 0.72);
+      color: var(--green-whatsapp);
+      box-shadow: 0 0 24px rgba(37, 211, 102, 0.18);
+    }
+
+    .hero-art {
+      position: relative;
+      min-height: 470px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-art-bloom {
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.18), transparent 70%);
+      filter: blur(16px);
+      pointer-events: none;
+    }
+
+    .gamepad-shell {
+      position: relative;
+      width: min(100%, 520px);
+      filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.48));
+      opacity: 0;
+      transform: scale(0.85);
+    }
+
+    .gamepad-glow {
+      position: absolute;
+      inset: auto 17% 8%;
+      height: 42px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.28);
+      filter: blur(22px);
+      box-shadow: 0 0 70px rgba(124, 58, 237, 0.45);
+      z-index: 0;
+    }
+
+    .gamepad-body {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .gamepad-particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(216, 180, 254, 0.92);
+      box-shadow: 0 0 18px rgba(168, 85, 247, 0.68);
+      opacity: 0.72;
+    }
+
+    .particle:nth-child(1) { top: 14%; left: 16%; }
+    .particle:nth-child(2) { top: 20%; right: 18%; width: 6px; height: 6px; }
+    .particle:nth-child(3) { top: 33%; left: 7%; width: 5px; height: 5px; }
+    .particle:nth-child(4) { top: 54%; right: 10%; }
+    .particle:nth-child(5) { bottom: 23%; left: 18%; width: 6px; height: 6px; }
+    .particle:nth-child(6) { bottom: 15%; right: 24%; width: 5px; height: 5px; }
+    .particle:nth-child(7) { top: 8%; left: 56%; width: 4px; height: 4px; }
+    .particle:nth-child(8) { bottom: 29%; right: 36%; width: 7px; height: 7px; }
+
+    .page-ready .headline-line {
+      animation: headline-rise 620ms cubic-bezier(0.2, 0.75, 0.2, 1) forwards;
+    }
+
+    .page-ready .headline-line:nth-child(1) { animation-delay: 0s; }
+    .page-ready .headline-line:nth-child(2) { animation-delay: 0.15s; }
+    .page-ready .headline-line:nth-child(3) { animation-delay: 0.3s; }
+
+    .page-ready .hero-subtitle {
+      animation: fade-up 650ms ease forwards;
+      animation-delay: 0.58s;
+    }
+
+    .page-ready .trust-item {
+      animation: fade-up 580ms ease forwards;
+      animation-delay: 0.9s;
+    }
+
+    .page-ready .trust-item:nth-child(2) { animation-delay: 1.1s; }
+    .page-ready .trust-item:nth-child(3) { animation-delay: 1.3s; }
+    .page-ready .trust-item:nth-child(4) { animation-delay: 1.5s; }
+
+    .page-ready .trust-icon {
+      animation: icon-pulse 800ms ease both;
+    }
+
+    .page-ready .trust-item:nth-child(1) .trust-icon { animation-delay: 1.05s; }
+    .page-ready .trust-item:nth-child(2) .trust-icon { animation-delay: 1.25s; }
+    .page-ready .trust-item:nth-child(3) .trust-icon { animation-delay: 1.45s; }
+    .page-ready .trust-item:nth-child(4) .trust-icon { animation-delay: 1.65s; }
+
+    .page-ready .gamepad-shell {
+      animation: gamepad-arrive 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation-delay: 0.45s;
+    }
+
+    @keyframes headline-rise {
+      from {
+        opacity: 0;
+        transform: translateY(32px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes gamepad-arrive {
+      from {
+        opacity: 0;
+        transform: scale(0.85);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes gamepad-float {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-12px);
+      }
+    }
+
+    @keyframes glow-breathe {
+      0%,
+      100% {
+        transform: scale(0.96);
+        opacity: 0.58;
+      }
+      50% {
+        transform: scale(1.06);
+        opacity: 0.9;
+      }
+    }
+
+    @keyframes particle-drift {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+      }
+      20% {
+        opacity: 0.72;
+      }
+      100% {
+        transform: translateY(-22px) scale(1.35);
+        opacity: 0;
+      }
+    }
+
+    @keyframes icon-pulse {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      70% {
+        transform: scale(1.12);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+
+      .headline-line,
+      .hero-subtitle,
+      .trust-item,
+      .gamepad-shell {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .hero-inner {
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+        gap: 36px;
+      }
+
+      .nav-inner {
+        width: min(1200px, calc(100% - 32px));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-inner,
+      .hero-inner {
+        width: min(100%, calc(100% - 28px));
+      }
+
+      .nav-inner {
+        padding: 16px 0;
+        min-height: auto;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .nav-links {
+        justify-content: flex-start;
+      }
+
+      .hero {
+        padding: 28px 0 56px;
+      }
+
+      .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 26px;
+      }
+
+      .hero-copy {
+        max-width: none;
+      }
+
+      .headline {
+        font-size: clamp(3rem, 13vw, 4.8rem);
+      }
+
+      .hero-subtitle {
+        font-size: 1.05rem;
+      }
+
+      .trust-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .cta {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .hero-art {
+        min-height: 340px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="nav">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="brand-title">Yathu Official</div>
+          <div class="brand-subtitle">Gaming Marketplace</div>
+        </div>
+
+        <nav class="nav-links" aria-label="Primary">
+          <a class="nav-link is-active" href="#">Home</a>
+          <a class="nav-link" href="#">Accounts</a>
+          <a class="nav-link" href="#">UC Packages</a>
+          <a class="nav-link" href="#">Featured Deals</a>
+          <a class="nav-link" href="#">Social Booster</a>
+          <a class="nav-link" href="#">Reviews</a>
+        </nav>
+
+        <a class="sign-in" href="#" aria-label="Sign In">
+          <span>Sign In</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="hero">
+      <div class="hero-inner">
+        <section class="hero-copy" aria-labelledby="hero-title">
+          <div class="eyebrow">Trusted Gaming Marketplace</div>
+
+          <h1 class="headline" id="hero-title">
+            <span class="headline-line">Premium Gaming</span>
+            <span class="headline-line is-accent">Accounts &amp; UC</span>
+            <span class="headline-line is-accent">Packages</span>
+          </h1>
+
+          <p class="hero-subtitle">
+            Buy verified gaming accounts with rare skins, high ranks, and secure
+            ownership transfer. Trusted by thousands of satisfied customers.
+          </p>
+
+          <ul class="trust-grid" aria-label="Trust Signals">
+            <li class="trust-item">
+              <svg class="trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20 7L10 17L5 12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="trust-label">Verified Accounts</span>
+            </li>
+            <li class="trust-item">
+              <svg class="trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20 7L10 17L5 12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="trust-label">Secure Transactions</span>
+            </li>
+            <li class="trust-item">
+              <svg class="trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20 7L10 17L5 12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="trust-label">Instant Delivery</span>
+            </li>
+            <li class="trust-item">
+              <svg class="trust-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20 7L10 17L5 12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="trust-label">24/7 Support</span>
+            </li>
+          </ul>
+
+          <div class="hero-actions">
+            <a class="cta cta-primary" href="#">View Accounts</a>
+            <a class="cta cta-secondary" href="#">Contact on WhatsApp</a>
+          </div>
+        </section>
+
+        <aside class="hero-art" aria-label="Gaming Controller Illustration">
+          <div class="hero-art-bloom"></div>
+
+          <div class="gamepad-shell">
+            <div class="gamepad-glow"></div>
+
+            <svg class="gamepad-body" viewBox="0 0 560 400" role="img" aria-label="Neon gaming controller">
+              <defs>
+                <linearGradient id="shellFill" x1="8%" y1="10%" x2="92%" y2="86%">
+                  <stop offset="0%" stop-color="rgba(33, 27, 71, 0.92)" />
+                  <stop offset="100%" stop-color="rgba(15, 12, 35, 0.98)" />
+                </linearGradient>
+                <linearGradient id="neonEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#d8b4fe" />
+                  <stop offset="50%" stop-color="#c084fc" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+                <filter id="edgeGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="7" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="10" result="blur" />
+                  <feColorMatrix
+                    in="blur"
+                    type="matrix"
+                    values="0.45 0 0 0 0.3 0 0.25 0 0 0.1 0 0 0.75 0 1 0 0 0 1 0"
+                  />
+                  <feMerge>
+                    <feMergeNode />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <g filter="url(#softGlow)">
+                <path
+                  d="M102 152C112 106 154 80 218 84C266 88 290 110 332 110C374 110 398 88 446 84C510 80 552 106 562 152C573 201 568 276 528 304C484 335 451 286 428 262C408 240 382 230 332 230C282 230 256 240 236 262C213 286 180 335 136 304C96 276 91 201 102 152Z"
+                  fill="url(#shellFill)"
+                  stroke="url(#neonEdge)"
+                  stroke-width="4"
+                />
+
+                <circle cx="202" cy="176" r="42" fill="#1f1638" stroke="#c084fc" stroke-width="3" />
+                <circle cx="202" cy="176" r="23" fill="#8b5cf6" opacity="0.88" />
+                <path d="M170 247H234" stroke="#d8b4fe" stroke-width="4" stroke-linecap="round" />
+                <path d="M202 215V279" stroke="#d8b4fe" stroke-width="4" stroke-linecap="round" />
+
+                <circle cx="306" cy="230" r="38" fill="#2a1d46" stroke="#93c5fd" stroke-width="3" />
+                <circle cx="306" cy="230" r="19" fill="#7c3aed" opacity="0.55" />
+
+                <circle cx="268" cy="150" r="17" fill="#251b40" stroke="#93c5fd" stroke-width="2.5" />
+                <circle cx="358" cy="150" r="17" fill="#251b40" stroke="#93c5fd" stroke-width="2.5" />
+                <path d="M285 150H341" stroke="#93c5fd" stroke-width="3" stroke-linecap="round" />
+
+                <g font-family="Inter, sans-serif" font-size="22" font-weight="800" text-anchor="middle">
+                  <circle cx="454" cy="168" r="29" fill="#23183e" stroke="#facc15" stroke-width="3" />
+                  <text x="454" y="176" fill="#facc15">Y</text>
+
+                  <circle cx="516" cy="203" r="29" fill="#23183e" stroke="#ef4444" stroke-width="3" />
+                  <text x="516" y="211" fill="#ef4444">B</text>
+
+                  <circle cx="394" cy="198" r="29" fill="#23183e" stroke="#38bdf8" stroke-width="3" />
+                  <text x="394" y="206" fill="#38bdf8">X</text>
+
+                  <circle cx="455" cy="263" r="29" fill="#23183e" stroke="#22c55e" stroke-width="3" />
+                  <text x="455" y="271" fill="#22c55e">A</text>
+                </g>
+              </g>
+            </svg>
+
+            <div class="gamepad-particles" aria-hidden="true">
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.body.classList.add("page-ready");
+    });
+  </script>
+</body>
+</html>

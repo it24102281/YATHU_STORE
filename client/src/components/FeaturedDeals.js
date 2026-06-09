@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Package2, RefreshCw, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Package2, RefreshCw, Search, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const CATEGORY_OPTIONS = [
@@ -25,12 +25,14 @@ const FeaturedDeals = ({
   showHeader = true,
   compact = false,
   showFilters = true,
+  showSearch = false,
   maxItems,
   latestFirst = false,
 }) => {
   const { api } = useAuth();
   const [deals, setDeals] = useState([]);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedDeal, setSelectedDeal] = useState(null);
@@ -58,6 +60,24 @@ const FeaturedDeals = ({
         ? [...deals]
         : deals.filter((deal) => deal.category === activeCategory);
 
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (normalizedQuery) {
+      nextDeals = nextDeals.filter((deal) => {
+        const searchableText = [
+          deal.title,
+          deal.category,
+          deal.subCategory,
+          deal.description,
+          deal.badge,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchableText.includes(normalizedQuery);
+      });
+    }
+
     if (latestFirst) {
       nextDeals.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
@@ -67,7 +87,7 @@ const FeaturedDeals = ({
     }
 
     return nextDeals;
-  }, [activeCategory, deals, latestFirst, maxItems]);
+  }, [activeCategory, deals, latestFirst, maxItems, searchQuery]);
 
   const getPreviewText = (description) => {
     const safeDescription = description || 'Professional delivery with reliable support and updated inventory status.';
@@ -110,21 +130,38 @@ const FeaturedDeals = ({
         )}
 
         {showFilters && (
-          <div className="flex flex-wrap justify-center gap-3 mb-10">
-            {CATEGORY_OPTIONS.map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className="px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200"
-                style={
-                  activeCategory === category
-                    ? { background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', color: '#fff', boxShadow: '0 8px 24px rgba(139,92,246,0.25)' }
-                    : { background: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)' }
-                }
-              >
-                {category}
-              </button>
-            ))}
+          <div className="mb-10">
+            {showSearch && (
+              <div className="mx-auto mb-6 max-w-xl">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search featured deals, subscriptions, boosters..."
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-4 pl-12 pr-4 text-white outline-none transition focus:border-purple-400/40"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap justify-center gap-3">
+              {CATEGORY_OPTIONS.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className="px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200"
+                  style={
+                    activeCategory === category
+                      ? { background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', color: '#fff', boxShadow: '0 8px 24px rgba(139,92,246,0.25)' }
+                      : { background: 'rgba(255,255,255,0.05)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.08)' }
+                  }
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -158,8 +195,14 @@ const FeaturedDeals = ({
             >
               <Package2 className="w-10 h-10 text-purple-400" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">No deals in this category</h3>
-            <p className="text-gray-500">New inventory will appear here as soon as it is enabled from the admin panel.</p>
+            <h3 className="text-2xl font-bold text-white mb-2">
+              {searchQuery.trim() ? 'No deals match your search' : 'No deals in this category'}
+            </h3>
+            <p className="text-gray-500">
+              {searchQuery.trim()
+                ? 'Try a different keyword or switch categories to browse more inventory.'
+                : 'New inventory will appear here as soon as it is enabled from the admin panel.'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useInView, animate } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Shield,
@@ -7,7 +7,6 @@ import {
   Star,
   MessageCircle,
   ChevronRight,
-  Users,
   CheckCircle,
   ArrowRight,
   Crown,
@@ -21,179 +20,6 @@ import {
 import AccountCard from '../components/AccountCard';
 import FeaturedDeals from '../components/FeaturedDeals';
 import { useAuth } from '../context/AuthContext';
-
-const createNetworkParticles = (width, height) => {
-  const isMobile = width < 768;
-  const count = isMobile ? 84 : 140;
-
-  return Array.from({ length: count }, () => ({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    vx: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.18),
-    vy: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.18),
-    radius: Math.random() * 0.8 + (isMobile ? 2.2 : 3),
-    glow: Math.random() * 0.14 + 0.46,
-  }));
-};
-
-const HeroNetworkBackground = ({ heroRef }) => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const heroElement = heroRef.current;
-    const canvas = canvasRef.current;
-    if (!heroElement || !canvas) return undefined;
-
-    const context = canvas.getContext('2d');
-    if (!context) return undefined;
-
-    let animationFrameId = 0;
-    let particles = [];
-    let width = 0;
-    let height = 0;
-    let pointerX = 0;
-    let pointerY = 0;
-    let targetX = 0;
-    let targetY = 0;
-
-    const resizeCanvas = () => {
-      const bounds = heroElement.getBoundingClientRect();
-      width = bounds.width;
-      height = bounds.height;
-
-      const devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
-      canvas.width = width * devicePixelRatio;
-      canvas.height = height * devicePixelRatio;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-
-      particles = createNetworkParticles(width, height);
-    };
-
-    const drawFrame = () => {
-      context.clearRect(0, 0, width, height);
-
-      pointerX += (targetX - pointerX) * 0.03;
-      pointerY += (targetY - pointerY) * 0.03;
-
-      const connectionDistance = width < 768 ? 100 : 145;
-      const parallaxStrength = width < 768 ? 4 : 8;
-
-      for (let index = 0; index < particles.length; index += 1) {
-        const particle = particles[index];
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-
-        if (particle.x < -20 || particle.x > width + 20) particle.vx *= -1;
-        if (particle.y < -20 || particle.y > height + 20) particle.vy *= -1;
-
-        for (let next = index + 1; next < particles.length; next += 1) {
-          const neighbor = particles[next];
-          const distanceX = particle.x - neighbor.x;
-          const distanceY = particle.y - neighbor.y;
-          const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-
-          if (distance < connectionDistance) {
-            const opacity = (1 - distance / connectionDistance) * 0.22;
-            const gradient = context.createLinearGradient(
-              particle.x,
-              particle.y,
-              neighbor.x,
-              neighbor.y
-            );
-            gradient.addColorStop(0, `rgba(168, 85, 247, ${opacity})`);
-            gradient.addColorStop(0.5, `rgba(192, 132, 252, ${Math.min(opacity + 0.04, 0.28)})`);
-            gradient.addColorStop(1, `rgba(216, 180, 254, ${opacity})`);
-            context.strokeStyle = gradient;
-            context.lineWidth = 0.9;
-            context.beginPath();
-            context.moveTo(particle.x, particle.y);
-            context.lineTo(neighbor.x, neighbor.y);
-            context.stroke();
-
-            context.beginPath();
-            context.fillStyle = `rgba(192, 132, 252, ${Math.min(opacity + 0.08, 0.2)})`;
-            context.shadowBlur = 6;
-            context.shadowColor = 'rgba(192, 132, 252, 0.2)';
-            context.arc(particle.x, particle.y, particle.radius * 0.55, 0, Math.PI * 2);
-            context.fill();
-          }
-        }
-      }
-
-      particles.forEach((particle) => {
-        const drawX = particle.x + pointerX * parallaxStrength;
-        const drawY = particle.y + pointerY * parallaxStrength;
-
-        context.beginPath();
-        context.fillStyle = `rgba(168, 85, 247, ${particle.glow})`;
-        context.shadowBlur = 12;
-        context.shadowColor = 'rgba(168, 85, 247, 0.38)';
-        context.arc(drawX, drawY, particle.radius, 0, Math.PI * 2);
-        context.fill();
-
-        context.beginPath();
-        context.fillStyle = 'rgba(216, 180, 254, 0.68)';
-        context.shadowBlur = 0;
-        context.arc(drawX, drawY, Math.max(0.6, particle.radius * 0.48), 0, Math.PI * 2);
-        context.fill();
-      });
-
-      animationFrameId = window.requestAnimationFrame(drawFrame);
-    };
-
-    const handleMouseMove = (event) => {
-      const bounds = heroElement.getBoundingClientRect();
-      targetX = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
-      targetY = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
-    };
-
-    const resetPointer = () => {
-      targetX = 0;
-      targetY = 0;
-    };
-
-    resizeCanvas();
-    drawFrame();
-
-    const resizeObserver = new ResizeObserver(() => resizeCanvas());
-    resizeObserver.observe(heroElement);
-
-    heroElement.addEventListener('mousemove', handleMouseMove);
-    heroElement.addEventListener('mouseleave', resetPointer);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-      resizeObserver.disconnect();
-      heroElement.removeEventListener('mousemove', handleMouseMove);
-      heroElement.removeEventListener('mouseleave', resetPointer);
-    };
-  }, [heroRef]);
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(135deg, #060608 0%, #0b0815 45%, #060608 100%)' }}
-      />
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(139,92,246,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.035) 1px, transparent 1px)',
-          backgroundSize: '72px 72px',
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-70"
-        style={{ background: 'radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 26%), radial-gradient(circle at 80% 18%, rgba(168, 85, 247, 0.11) 0%, transparent 22%), radial-gradient(circle at 52% 74%, rgba(139, 92, 246, 0.09) 0%, transparent 28%)' }}
-      />
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full opacity-80" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,8,0.38)_0%,rgba(4,4,8,0.18)_30%,rgba(4,4,8,0.44)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(3,3,6,0.14)_56%,rgba(3,3,6,0.34)_100%)]" />
-    </div>
-  );
-};
 
 /* ── Animated counter hook ─────────────────────────────────────── */
 const useCounter = (target, duration = 1800) => {
@@ -277,11 +103,335 @@ const SectionHeading = ({ badge, title, subtitle }) => (
 );
 
 /* ── Main Component ────────────────────────────────────────────── */
+const GamingControllerVisual = () => (
+  <motion.div
+    initial={{ opacity: 0, y: 28, scale: 0.96 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.8, delay: 0.15 }}
+    className="relative isolate mx-auto flex min-h-[360px] w-full max-w-[590px] items-center justify-center sm:min-h-[430px] lg:min-h-[500px]"
+    style={{ perspective: 1300 }}
+  >
+    <motion.div
+      animate={{ scale: [1, 1.08, 1], opacity: [0.42, 0.7, 0.42] }}
+      transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
+      className="absolute z-0 h-[360px] w-[360px] rounded-full bg-purple-600/30 blur-3xl sm:h-[430px] sm:w-[430px]"
+    />
+    <div
+      className="absolute z-0 h-[300px] w-[420px] rounded-full opacity-70 blur-2xl"
+      style={{
+        background: 'radial-gradient(circle, rgba(168,85,247,0.42) 0%, rgba(88,28,135,0.18) 42%, transparent 72%)',
+      }}
+    />
+
+    {[
+      { top: '16%', left: '16%', size: 6, delay: 0 },
+      { top: '24%', left: '76%', size: 5, delay: 0.6 },
+      { top: '47%', left: '9%', size: 4, delay: 1.2 },
+      { top: '66%', left: '82%', size: 7, delay: 0.3 },
+      { top: '80%', left: '29%', size: 4, delay: 1.5 },
+      { top: '14%', left: '52%', size: 3, delay: 0.9 },
+    ].map((particle) => (
+      <motion.span
+        key={`${particle.top}-${particle.left}`}
+        animate={{ y: [0, -18, 0], opacity: [0.28, 0.9, 0.28], scale: [1, 1.45, 1] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: particle.delay }}
+        className="absolute z-20 rounded-full bg-purple-200"
+        style={{
+          top: particle.top,
+          left: particle.left,
+          width: particle.size,
+          height: particle.size,
+          boxShadow: '0 0 18px rgba(216,180,254,0.95)',
+        }}
+      />
+    ))}
+
+    <motion.div
+      animate={{ y: [0, -18, 0], rotateX: [13, 17, 13], rotateY: [-18, 12, -18], rotateZ: [-2, 2, -2] }}
+      transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut' }}
+      className="relative z-10 h-[285px] w-[360px] sm:h-[340px] sm:w-[500px]"
+      style={{ transformStyle: 'preserve-3d' }}
+    >
+      <div
+        className="absolute left-1/2 top-1/2 h-[178px] w-[328px] -translate-x-1/2 -translate-y-1/2 border border-purple-200/22 bg-[#08070b] sm:h-[220px] sm:w-[460px]"
+        style={{
+          borderRadius: '46% 46% 42% 42% / 38% 38% 58% 58%',
+          backdropFilter: 'blur(24px)',
+          boxShadow: '0 42px 110px rgba(126,34,206,0.46), 0 0 34px rgba(168,85,247,0.34), inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -38px 80px rgba(0,0,0,0.72), inset 0 28px 65px rgba(126,34,206,0.18)',
+          transform: 'translate(-50%, -50%) translateZ(42px)',
+        }}
+      />
+      <div
+        className="absolute left-[12px] top-[122px] h-[142px] w-[156px] border border-purple-200/18 bg-[#07070b] sm:left-[8px] sm:top-[136px] sm:h-[178px] sm:w-[210px]"
+        style={{
+          borderRadius: '58% 36% 54% 62% / 36% 42% 64% 58%',
+          backdropFilter: 'blur(20px)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.13), inset -22px -32px 52px rgba(0,0,0,0.74), 0 28px 80px rgba(88,28,135,0.32)',
+          transform: 'translateZ(30px) rotate(-13deg)',
+        }}
+      />
+      <div
+        className="absolute right-[12px] top-[122px] h-[142px] w-[156px] border border-purple-200/18 bg-[#07070b] sm:right-[8px] sm:top-[136px] sm:h-[178px] sm:w-[210px]"
+        style={{
+          borderRadius: '36% 58% 62% 54% / 42% 36% 58% 64%',
+          backdropFilter: 'blur(20px)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.13), inset 22px -32px 52px rgba(0,0,0,0.74), 0 28px 80px rgba(88,28,135,0.32)',
+          transform: 'translateZ(30px) rotate(13deg)',
+        }}
+      />
+      <div
+        className="absolute left-1/2 top-[95px] h-[44px] w-[142px] -translate-x-1/2 rounded-full bg-white/10 sm:top-[112px] sm:h-[58px] sm:w-[190px]"
+        style={{
+          filter: 'blur(18px)',
+          transform: 'translateX(-50%) translateZ(72px)',
+        }}
+      />
+
+      <div
+        className="absolute left-[70px] top-[128px] grid h-[86px] w-[86px] place-items-center rounded-full border border-purple-100/18 bg-[#050508] sm:left-[100px] sm:top-[154px] sm:h-[104px] sm:w-[104px]"
+        style={{
+          transform: 'translateZ(84px)',
+          boxShadow: '0 18px 45px rgba(0,0,0,0.65), 0 0 40px rgba(192,132,252,0.55), inset 0 16px 28px rgba(255,255,255,0.08), inset -10px -18px 28px rgba(0,0,0,0.86)',
+        }}
+      >
+        <motion.div
+          animate={{ y: [0, -4, 0], x: [0, 3, 0] }}
+          transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
+          className="h-12 w-12 rounded-full bg-gradient-to-br from-[#25202f] via-[#111016] to-black sm:h-14 sm:w-14"
+          style={{ boxShadow: '0 0 26px rgba(168,85,247,0.5), inset 10px 10px 14px rgba(255,255,255,0.12), inset -12px -14px 18px rgba(0,0,0,0.72)' }}
+        />
+      </div>
+
+      <div
+        className="absolute left-[142px] top-[205px] h-[54px] w-[54px] rounded-full border border-purple-100/16 bg-[#050508] sm:left-[186px] sm:top-[248px] sm:h-[66px] sm:w-[66px]"
+        style={{
+          transform: 'translateZ(78px)',
+          boxShadow: '0 14px 34px rgba(0,0,0,0.58), 0 0 24px rgba(168,85,247,0.32), inset 8px 8px 16px rgba(255,255,255,0.08), inset -10px -12px 18px rgba(0,0,0,0.74)',
+        }}
+      />
+
+      <div
+        className="absolute left-[122px] top-[128px] grid h-[66px] w-[66px] place-items-center sm:left-[166px] sm:top-[150px] sm:h-[78px] sm:w-[78px]"
+        style={{ transform: 'translateZ(88px)' }}
+      >
+        <div className="absolute h-5 w-[58px] rounded-md bg-[#111018] shadow-[0_0_18px_rgba(168,85,247,0.22)] sm:h-6 sm:w-[68px]" />
+        <div className="absolute h-[58px] w-5 rounded-md bg-[#111018] shadow-[0_0_18px_rgba(168,85,247,0.22)] sm:h-[68px] sm:w-6" />
+      </div>
+
+      <div
+        className="absolute right-[66px] top-[128px] grid grid-cols-2 gap-3 sm:right-[92px] sm:top-[154px] sm:gap-4"
+        style={{ transform: 'translateZ(86px)' }}
+      >
+        {[
+          { label: 'Y', color: '#facc15' },
+          { label: 'B', color: '#ef4444' },
+          { label: 'X', color: '#38bdf8' },
+          { label: 'A', color: '#22c55e' },
+        ].map((button) => (
+          <div
+            key={button.label}
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/12 bg-[#050508] text-xs font-black text-white sm:h-11 sm:w-11"
+            style={{
+              color: button.color,
+              boxShadow: `0 12px 26px rgba(0,0,0,0.55), 0 0 18px ${button.color}55, inset 0 1px 0 rgba(255,255,255,0.16), inset -7px -8px 14px rgba(0,0,0,0.72)`,
+            }}
+          >
+            {button.label}
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="absolute left-1/2 top-[120px] h-8 w-8 -translate-x-1/2 rounded-full border border-purple-100/18 bg-[#050508] sm:top-[146px] sm:h-10 sm:w-10"
+        style={{ transform: 'translateX(-50%) translateZ(92px)', boxShadow: '0 12px 28px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.14)' }}
+      />
+      <div
+        className="absolute left-[184px] top-[122px] h-7 w-12 rounded-full border border-purple-100/12 bg-[#050508] sm:left-[248px] sm:top-[148px] sm:h-8 sm:w-16"
+        style={{ transform: 'translateZ(90px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.36)' }}
+      />
+      <div
+        className="absolute right-[184px] top-[122px] h-7 w-12 rounded-full border border-purple-100/12 bg-[#050508] sm:right-[248px] sm:top-[148px] sm:h-8 sm:w-16"
+        style={{ transform: 'translateZ(90px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.36)' }}
+      />
+
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+        className="absolute left-1/2 top-1/2 h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-purple-300/10 sm:h-[430px] sm:w-[430px]"
+        style={{
+          background: 'conic-gradient(from 90deg, transparent, rgba(168,85,247,0.34), transparent 34%, rgba(216,180,254,0.24), transparent 72%)',
+          filter: 'blur(1.5px)',
+          transform: 'translate(-50%, -50%) translateZ(-48px)',
+        }}
+      />
+    </motion.div>
+
+    <div className="absolute bottom-10 z-0 h-16 w-80 rounded-full bg-purple-500/20 blur-2xl" />
+  </motion.div>
+);
+
+const HolographicControllerVisual = () => (
+  <div
+    className="relative isolate mx-auto flex min-h-[380px] w-full max-w-[680px] items-center justify-center sm:min-h-[460px] lg:min-h-[560px]"
+    style={{ perspective: 1400 }}
+  >
+    <div
+      className="absolute z-0 h-[320px] w-[420px] rounded-full blur-3xl sm:h-[420px] sm:w-[580px]"
+      style={{ background: 'radial-gradient(circle, rgba(96,165,250,0.14) 0%, rgba(168,85,247,0.32) 34%, rgba(88,28,135,0.1) 58%, transparent 76%)' }}
+    />
+    <div
+      className="absolute z-0 h-[480px] w-[480px] rounded-full opacity-70 blur-[110px] sm:h-[620px] sm:w-[620px]"
+      style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.16) 0%, transparent 68%)' }}
+    />
+
+    {[0, 1, 2].map((ring) => (
+      <motion.div
+        key={ring}
+        animate={{ rotate: ring % 2 === 0 ? 360 : -360 }}
+        transition={{ duration: 28 + ring * 8, repeat: Infinity, ease: 'linear' }}
+        className="absolute rounded-full border"
+        style={{
+          width: 340 + ring * 74,
+          height: 138 + ring * 34,
+          borderColor: ring === 1 ? 'rgba(96,165,250,0.14)' : 'rgba(192,132,252,0.18)',
+          transform: `rotate(${ring * 13 - 12}deg)`,
+          boxShadow: '0 0 28px rgba(168,85,247,0.14)',
+        }}
+      />
+    ))}
+
+    {[
+      { top: '13%', left: '16%', size: 4, delay: 0 },
+      { top: '21%', left: '80%', size: 5, delay: 0.8 },
+      { top: '34%', left: '7%', size: 3, delay: 1.1 },
+      { top: '54%', left: '86%', size: 4, delay: 0.5 },
+      { top: '74%', left: '20%', size: 5, delay: 1.7 },
+      { top: '16%', left: '56%', size: 3, delay: 1.2 },
+      { top: '77%', left: '62%', size: 3, delay: 0.9 },
+      { top: '64%', left: '12%', size: 4, delay: 1.4 },
+    ].map((particle) => (
+      <motion.span
+        key={`${particle.top}-${particle.left}`}
+        animate={{ y: [0, -18, 0], opacity: [0.28, 0.9, 0.28], scale: [1, 1.5, 1] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: particle.delay }}
+        className="absolute z-20 rounded-full"
+        style={{
+          top: particle.top,
+          left: particle.left,
+          width: particle.size,
+          height: particle.size,
+          background: particle.delay > 1 ? '#93c5fd' : '#d8b4fe',
+          boxShadow: '0 0 18px rgba(216,180,254,0.9)',
+        }}
+      />
+    ))}
+
+    {[0, 1, 2].map((streak) => (
+      <motion.div
+        key={`streak-${streak}`}
+        animate={{ x: [0, 18, 0], opacity: [0.22, 0.54, 0.22] }}
+        transition={{ duration: 5 + streak, repeat: Infinity, ease: 'easeInOut', delay: streak * 0.6 }}
+        className="absolute z-10 rounded-full"
+        style={{
+          top: `${24 + streak * 16}%`,
+          left: `${18 + streak * 8}%`,
+          width: `${240 + streak * 60}px`,
+          height: '2px',
+          background: streak === 1
+            ? 'linear-gradient(90deg, transparent, rgba(96,165,250,0.65), transparent)'
+            : 'linear-gradient(90deg, transparent, rgba(216,180,254,0.75), transparent)',
+          filter: 'blur(0.5px)',
+          transform: `rotate(${streak === 1 ? -10 : streak === 2 ? 12 : -4}deg)`,
+        }}
+      />
+    ))}
+
+    <motion.div
+      animate={{ y: [0, -14, 0], rotate: [-1, 1.4, -1] }}
+      transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
+      className="relative z-10 w-[360px] max-w-full sm:w-[540px] lg:w-[640px]"
+      style={{
+        transformStyle: 'preserve-3d',
+        filter: 'drop-shadow(0 28px 60px rgba(0,0,0,0.58)) drop-shadow(0 0 24px rgba(168,85,247,0.52))',
+      }}
+    >
+      <svg viewBox="0 0 820 430" className="h-auto w-full overflow-visible" role="img" aria-label="Holographic gaming controller">
+        <defs>
+          <linearGradient id="controllerEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.95" />
+            <stop offset="48%" stopColor="#d8b4fe" stopOpacity="0.98" />
+            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.95" />
+          </linearGradient>
+          <radialGradient id="controllerGlass" cx="50%" cy="42%" r="68%">
+            <stop offset="0%" stopColor="#c4b5fd" stopOpacity="0.16" />
+            <stop offset="42%" stopColor="#7c3aed" stopOpacity="0.1" />
+            <stop offset="100%" stopColor="#020106" stopOpacity="0.3" />
+          </radialGradient>
+          <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feColorMatrix in="blur" type="matrix" values="0.45 0 0 0 0.35 0 0.25 0 0 0.1 0 0 0.8 0 1 0 0 0 1 0" />
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <path
+          d="M144 178 C150 120 196 88 272 96 C322 101 344 126 410 126 C476 126 498 101 548 96 C624 88 670 120 676 178 C684 247 716 307 677 354 C636 404 572 354 536 312 C508 280 472 270 410 270 C348 270 312 280 284 312 C248 354 184 404 143 354 C104 307 136 247 144 178 Z"
+          fill="url(#controllerGlass)"
+          stroke="url(#controllerEdge)"
+          strokeWidth="3"
+          filter="url(#neonGlow)"
+        />
+        <path
+          d="M184 183 C228 154 271 147 318 166 M502 166 C549 147 592 154 636 183 M298 252 C352 232 468 232 522 252"
+          fill="none"
+          stroke="#93c5fd"
+          strokeWidth="1.5"
+          strokeOpacity="0.38"
+        />
+
+        <g filter="url(#neonGlow)">
+          <circle cx="264" cy="210" r="47" fill="#03020a" fillOpacity="0.62" stroke="#c4b5fd" strokeWidth="2.5" />
+          <circle cx="264" cy="210" r="24" fill="#d8b4fe" fillOpacity="0.34" stroke="#93c5fd" strokeWidth="1.5" />
+          <circle cx="410" cy="260" r="43" fill="#03020a" fillOpacity="0.58" stroke="#93c5fd" strokeWidth="2.2" />
+          <circle cx="410" cy="260" r="22" fill="#8b5cf6" fillOpacity="0.28" stroke="#d8b4fe" strokeWidth="1.4" />
+        </g>
+
+        <g stroke="#d8b4fe" strokeWidth="3" strokeLinecap="round" filter="url(#neonGlow)">
+          <path d="M206 278 H282" />
+          <path d="M244 240 V316" />
+        </g>
+
+        <g filter="url(#neonGlow)">
+          {[
+            { cx: 566, cy: 190, color: '#facc15', label: 'Y' },
+            { cx: 628, cy: 220, color: '#ef4444', label: 'B' },
+            { cx: 504, cy: 220, color: '#38bdf8', label: 'X' },
+            { cx: 566, cy: 282, color: '#22c55e', label: 'A' },
+          ].map((button) => (
+            <g key={button.label}>
+              <circle cx={button.cx} cy={button.cy} r="28" fill="#020106" fillOpacity="0.62" stroke={button.color} strokeOpacity="0.9" strokeWidth="2" />
+              <text x={button.cx} y={button.cy + 7} textAnchor="middle" fontSize="22" fontWeight="800" fill={button.color}>{button.label}</text>
+            </g>
+          ))}
+        </g>
+
+        <g stroke="#93c5fd" strokeWidth="2" strokeOpacity="0.6" filter="url(#neonGlow)">
+          <circle cx="376" cy="180" r="16" fill="#03020a" fillOpacity="0.38" />
+          <circle cx="444" cy="180" r="16" fill="#03020a" fillOpacity="0.38" />
+          <path d="M390 178 H430" />
+        </g>
+      </svg>
+    </motion.div>
+  </div>
+);
+
 const Home = () => {
   const [featuredAccounts, setFeaturedAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { api } = useAuth();
-  const heroRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -327,46 +477,92 @@ const Home = () => {
     <div className="min-h-screen" style={{ background: '#0a0a0a', fontFamily: 'Poppins, sans-serif' }}>
 
       {/* ── HERO ────────────────────────────────────────────────── */}
-      <section ref={heroRef} className="relative overflow-hidden" style={{ minHeight: '100vh', paddingTop: 80 }}>
-        <HeroNetworkBackground heroRef={heroRef} />
+      <section
+        className="relative overflow-hidden"
+        style={{
+          minHeight: '100vh',
+          paddingTop: 80,
+          background: 'radial-gradient(circle at 22% 30%, rgba(124,58,237,0.12), transparent 0 24rem), radial-gradient(circle at 78% 46%, rgba(124,58,237,0.16), transparent 0 28rem), linear-gradient(135deg, #060608 0%, #0b0815 45%, #060608 100%)',
+        }}
+      >
+        <div
+          className="pointer-events-none absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(168,85,247,0.5) 1px, transparent 1px)',
+            backgroundSize: '26px 26px',
+          }}
+        />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center" style={{ minHeight: 'calc(100vh - 80px)' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center w-full py-16">
+        <div className="relative z-10 mx-auto flex max-w-7xl items-center px-4 sm:px-6 lg:px-8" style={{ minHeight: 'calc(100vh - 80px)' }}>
+          <div className="grid w-full grid-cols-1 items-center gap-10 py-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:py-8">
 
             {/* Left */}
-            <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }} className="space-y-8">
-              {/* Trust badge */}
-              <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full"
-                style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.28)' }}>
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-semibold text-purple-300 tracking-wide">Trusted Gaming Marketplace</span>
-              </motion.div>
-
+            <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }} className="mx-auto w-full max-w-2xl space-y-9 lg:ml-10 lg:mr-0">
               {/* Heading */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="space-y-4">
-                <h1 className="font-black leading-tight" style={{ fontSize: 'clamp(2.4rem, 5vw, 3.8rem)' }}>
-                  <span className="text-white">Premium Gaming</span>
-                  <br />
-                  <span style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                    Accounts & UC
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="space-y-5">
+                <div
+                  className="pointer-events-none absolute left-0 top-[160px] h-48 w-48 rounded-full blur-3xl"
+                  style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)' }}
+                />
+                <h1
+                  className="relative max-w-[15ch] font-black leading-[0.9] tracking-[-0.02em]"
+                  style={{
+                    fontFamily: 'Rajdhani, Poppins, sans-serif',
+                    fontSize: 'clamp(2.85rem, 5.4vw, 5.15rem)',
+                    textShadow: '0 10px 30px rgba(0,0,0,0.28)',
+                  }}
+                >
+                  <span className="block text-white">Premium</span>
+                  <span
+                    className="block whitespace-nowrap"
+                    style={{
+                      background: 'linear-gradient(135deg,#8b5cf6,#a855f7,#d8b4fe)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      textShadow: '0 0 24px rgba(168,85,247,0.42)',
+                    }}
+                  >
+                    Gaming & Social
                   </span>
-                  <br />
-                  <span className="text-white">Packages</span>
+                  <span
+                    className="block"
+                    style={{
+                      background: 'linear-gradient(135deg,#8b5cf6,#a855f7,#d8b4fe)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      textShadow: '0 0 28px rgba(168,85,247,0.55)',
+                    }}
+                  >
+                    growth
+                  </span>
                 </h1>
-                <p className="text-gray-400 text-lg leading-relaxed max-w-lg">
-                  Buy verified gaming accounts with rare skins, high ranks, and secure ownership transfer.
-                  Trusted by thousands of satisfied customers.
+                <p className="text-xl font-semibold tracking-[0.02em] text-gray-300 sm:text-2xl" style={{ fontFamily: 'Rajdhani, Poppins, sans-serif' }}>
+                  Accounts • UC Packages • Social Media Services
+                </p>
+                <p className="max-w-xl text-lg leading-relaxed text-gray-400 sm:text-xl">
+                  Buy verified gaming accounts, UC packages, premium subscriptions, and social media growth services.
+                  Trusted by thousands of customers with secure payments and instant delivery.
                 </p>
               </motion.div>
 
               {/* Feature pills */}
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-                className="grid grid-cols-2 gap-3">
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {['Verified Accounts', 'Instant Delivery', 'Secure Transactions', '24/7 Support'].map((f) => (
-                  <div key={f} className="flex items-center gap-2">
+                  <div
+                    key={f}
+                    className="group flex items-center gap-3 rounded-full px-4 py-3"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(168,85,247,0.16)',
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                    }}
+                  >
                     <CheckCircle className="w-4 h-4 flex-shrink-0 text-purple-400" />
-                    <span className="text-sm text-gray-300 font-medium">{f}</span>
+                    <span className="text-sm font-medium text-gray-200">{f}</span>
                   </div>
                 ))}
               </motion.div>
@@ -374,61 +570,53 @@ const Home = () => {
               {/* CTA Buttons */}
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
                 className="flex flex-col sm:flex-row gap-4">
-                <Link to="/accounts"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-white text-base transition-all duration-300 hover:-translate-y-1"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', boxShadow: '0 8px 32px rgba(139,92,246,0.35)' }}>
-                  <span>View Accounts</span>
+                <Link
+                  to="/services"
+                  className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-8 py-4 text-base font-bold text-white transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(124,58,237,0.78), rgba(168,85,247,0.62))',
+                    border: '1px solid rgba(216,180,254,0.18)',
+                    backdropFilter: 'blur(18px)',
+                    boxShadow: '0 12px 36px rgba(124,58,237,0.26), inset 0 1px 0 rgba(255,255,255,0.16)',
+                  }}
+                >
+                  <span
+                    className="pointer-events-none absolute inset-y-0 left-[-28%] w-1/3 -skew-x-12 opacity-0 transition-all duration-500 group-hover:left-[110%] group-hover:opacity-100"
+                    style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.42), transparent)' }}
+                  />
+                  <span>View Products</span>
                   <ArrowRight className="w-5 h-5" />
                 </Link>
-                <a href="https://wa.me/94763442220" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-sm transition-all duration-300 hover:-translate-y-1 hover:bg-green-500/10"
-                  style={{ border: '2px solid rgba(34,197,94,0.5)', color: '#4ade80' }}>
+                <a
+                  href="https://wa.me/94763442220"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: '#cbd5e1',
+                    background: 'rgba(255,255,255,0.03)',
+                    backdropFilter: 'blur(18px)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                  }}
+                  onMouseEnter={(event) => {
+                    event.currentTarget.style.borderColor = 'rgba(37, 211, 102, 0.72)';
+                    event.currentTarget.style.color = '#25D366';
+                    event.currentTarget.style.boxShadow = '0 0 24px rgba(37, 211, 102, 0.18), inset 0 1px 0 rgba(255,255,255,0.04)';
+                  }}
+                  onMouseLeave={(event) => {
+                    event.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                    event.currentTarget.style.color = '#cbd5e1';
+                    event.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)';
+                  }}
+                >
                   <MessageCircle className="w-5 h-5" />
                   <span>Contact on WhatsApp</span>
                 </a>
               </motion.div>
             </motion.div>
 
-            {/* Right - Hero card */}
-            <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
-              className="relative hidden lg:flex justify-center items-center">
-              {/* Glow ring */}
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                className="absolute inset-0 rounded-3xl opacity-20"
-                style={{ background: 'conic-gradient(from 0deg, transparent 60%, #8b5cf6, #a855f7, transparent 100%)', filter: 'blur(20px)' }} />
-
-              <div className="relative w-full max-w-md">
-                {/* Main card */}
-                <div className="relative rounded-3xl overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(17,17,17,0.8))', border: '1px solid rgba(139,92,246,0.25)', backdropFilter: 'blur(20px)' }}>
-                  <img src="/logo.JPG" alt="Yathu Official" className="w-full object-cover transition-transform duration-500 hover:scale-105" style={{ height: 340 }} />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,10,10,0.6) 0%, transparent 50%)' }} />
-                  {/* Shine */}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%)' }} />
-                </div>
-
-                {/* Trust badge floating */}
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute -bottom-5 -right-5 px-5 py-3 rounded-2xl flex items-center gap-2"
-                  style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', boxShadow: '0 12px 30px rgba(139,92,246,0.4)' }}>
-                  <Crown className="w-4 h-4 text-yellow-300" />
-                  <span className="text-white font-bold text-sm">1000+ Happy Customers</span>
-                </motion.div>
-
-                {/* Stats mini card */}
-                <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                  className="absolute -top-4 -left-4 px-4 py-3 rounded-2xl"
-                  style={{ background: 'rgba(17,17,17,0.9)', border: '1px solid rgba(139,92,246,0.3)', backdropFilter: 'blur(12px)' }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-white text-xs font-semibold">Verified & Secure</span>
-                  </div>
-                  <div className="flex mt-1 gap-0.5">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />)}
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
+            <HolographicControllerVisual />
           </div>
         </div>
 

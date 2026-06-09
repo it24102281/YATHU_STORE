@@ -10,6 +10,54 @@ const router = express.Router();
 const whatsappRegex = /^[0-9+\-\s()]{8,20}$/;
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
+const getSignupErrorResponse = (error) => {
+  if (error?.code === 11000) {
+    if (error.keyPattern?.email) {
+      return { status: 409, message: 'Email already exists' };
+    }
+
+    if (error.keyPattern?.whatsappNumber) {
+      return { status: 409, message: 'WhatsApp number already exists' };
+    }
+  }
+
+  if (error?.name === 'ValidationError') {
+    const firstMessage = Object.values(error.errors || {})[0]?.message;
+    return {
+      status: 400,
+      message: firstMessage || 'Please check your signup details and try again',
+    };
+  }
+
+  if (String(error?.message || '').toLowerCase().includes('smtp')) {
+    return {
+      status: 500,
+      message: 'Verification email could not be sent right now. Please try again in a moment.',
+    };
+  }
+
+  return {
+    status: 500,
+    message: 'Failed to start signup verification',
+  };
+};
+
+const getEmailDeliveryErrorResponse = (error, fallbackMessage) => {
+  const normalizedMessage = String(error?.message || '').trim();
+
+  if (normalizedMessage.toLowerCase().includes('smtp')) {
+    return {
+      status: 500,
+      message: normalizedMessage,
+    };
+  }
+
+  return {
+    status: 500,
+    message: fallbackMessage,
+  };
+};
+
 const getSafeUser = (user) => ({
   id: user._id,
   fullName: user.fullName,
@@ -125,9 +173,11 @@ router.post('/signup', async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(400).json({
+    const signupError = getSignupErrorResponse(error);
+
+    return res.status(signupError.status).json({
       success: false,
-        message: 'Failed to start signup verification',
+      message: signupError.message,
       error: error.message,
     });
   }
@@ -343,9 +393,11 @@ router.post('/forgot-password', async (req, res) => {
       data: process.env.NODE_ENV === 'development' ? { resetUrl } : undefined,
     });
   } catch (error) {
-    return res.status(500).json({
+    const deliveryError = getEmailDeliveryErrorResponse(error, 'Failed to send reset link');
+
+    return res.status(deliveryError.status).json({
       success: false,
-      message: 'Failed to send reset link',
+      message: deliveryError.message,
       error: error.message,
     });
   }

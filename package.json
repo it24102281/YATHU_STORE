@@ -4,9 +4,9 @@
   "description": "Complete MERN stack website for YATHU PUBG STORE - PUBG account selling business",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently --names \"server,client\" --prefix-colors \"cyan,magenta\" \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
-    "client": "cd client && npm start",
+    "client": "node scripts/start-client.js",
     "build": "cd client && npm run build",
     "start": "cd server && npm start"
   },

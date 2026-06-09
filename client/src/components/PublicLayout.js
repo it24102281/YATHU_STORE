@@ -1,12 +1,21 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
 const PublicLayout = () => {
+    const location = useLocation();
+    const hideNavbarRoutes = new Set([
+        '/user/login',
+        '/user/signup',
+        '/user/forgot-password',
+        '/user/reset-password',
+    ]);
+    const shouldHideNavbar = hideNavbarRoutes.has(location.pathname);
+
     return (
         <>
-            <Navbar />
+            {!shouldHideNavbar && <Navbar />}
             <div className="min-h-screen">
                 <Outlet />
             </div>

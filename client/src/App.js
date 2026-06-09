@@ -63,7 +63,7 @@ function App() {
                 <Route path="/uc-packages" element={<UCPackages />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/services" element={<Services />} />
-                <Route path="/social-booster" element={<RequireUserAuth><SocialBooster /></RequireUserAuth>} />
+                <Route path="/social-booster" element={<SocialBooster />} />
                 <Route path="/sold-proofs" element={<SoldProofs />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/faq" element={<FAQ />} />

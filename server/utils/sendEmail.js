@@ -1,8 +1,11 @@
 const nodemailer = require('nodemailer');
 
 let cachedTransporter;
+let transporterVerified = false;
 
 const getRequiredEnv = (key) => process.env[key]?.trim();
+const getBooleanEnv = (key) => /^(true|1|yes)$/i.test(getRequiredEnv(key) || '');
+const getSenderAddress = () => getRequiredEnv('EMAIL_FROM') || getRequiredEnv('SMTP_FROM') || getRequiredEnv('SMTP_USER');
 
 const hasSmtpConfig = () =>
   Boolean(
@@ -10,7 +13,7 @@ const hasSmtpConfig = () =>
       getRequiredEnv('SMTP_PORT') &&
       getRequiredEnv('SMTP_USER') &&
       getRequiredEnv('SMTP_PASS') &&
-      getRequiredEnv('EMAIL_FROM')
+      getSenderAddress()
   );
 
 const getTransporter = () => {
@@ -22,13 +25,24 @@ const getTransporter = () => {
     throw new Error('SMTP configuration is missing. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and EMAIL_FROM.');
   }
 
+  const port = Number(getRequiredEnv('SMTP_PORT'));
+  const secure = getRequiredEnv('SMTP_SECURE')
+    ? getBooleanEnv('SMTP_SECURE')
+    : port === 465;
+
   cachedTransporter = nodemailer.createTransport({
     host: getRequiredEnv('SMTP_HOST'),
-    port: Number(getRequiredEnv('SMTP_PORT')),
-    secure: Number(getRequiredEnv('SMTP_PORT')) === 465,
+    port,
+    secure,
+    requireTLS: getRequiredEnv('SMTP_REQUIRE_TLS')
+      ? getBooleanEnv('SMTP_REQUIRE_TLS')
+      : port === 587,
     auth: {
       user: getRequiredEnv('SMTP_USER'),
       pass: getRequiredEnv('SMTP_PASS'),
+    },
+    tls: {
+      rejectUnauthorized: !getBooleanEnv('SMTP_ALLOW_INVALID_CERT'),
     },
   });
 
@@ -38,8 +52,17 @@ const getTransporter = () => {
 const sendEmail = async ({ to, subject, html, text }) => {
   const transporter = getTransporter();
 
+  if (!transporterVerified) {
+    try {
+      await transporter.verify();
+      transporterVerified = true;
+    } catch (error) {
+      throw new Error(`SMTP connection failed: ${error.message}`);
+    }
+  }
+
   const info = await transporter.sendMail({
-    from: getRequiredEnv('EMAIL_FROM'),
+    from: getSenderAddress(),
     to,
     subject,
     text,

@@ -4,12 +4,14 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  Lock,
+  LogIn,
   Search,
   ShieldCheck,
   Sparkles,
   Ticket,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
@@ -86,7 +88,9 @@ const parseServiceIdQuery = (value) => {
 };
 
 const SocialBooster = () => {
-  const { api, customer, loadCustomer } = useAuth();
+  const { api, customer, loadCustomer, isUserAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -276,6 +280,12 @@ const SocialBooster = () => {
   const handleCreateOrder = async (event) => {
     event.preventDefault();
 
+    if (!isUserAuthenticated) {
+      toast.info('Please log in to place a social booster order');
+      navigate('/user/login', { state: { from: location } });
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -347,10 +357,17 @@ const SocialBooster = () => {
             <p className="mx-auto mt-6 max-w-4xl text-lg leading-relaxed text-gray-300 md:text-2xl">
               Boost your social media presence with premium engagement services.
             </p>
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100">
-              <ShieldCheck className="h-4 w-4" />
-              Logged in as {customer?.fullName || 'Customer'}
-            </div>
+            {isUserAuthenticated ? (
+              <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100">
+                <ShieldCheck className="h-4 w-4" />
+                Logged in as {customer?.fullName || 'Customer'}
+              </div>
+            ) : (
+              <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-sm text-amber-100">
+                <Lock className="h-4 w-4" />
+                Browse services freely. Login is required only when placing an order.
+              </div>
+            )}
           </motion.div>
 
           <div className="mt-14 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
@@ -493,10 +510,29 @@ const SocialBooster = () => {
               <p className="mt-3 leading-7 text-gray-400">
                 Choose a category, select a package, review pricing details, and create your order instantly.
               </p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100">
-                <ShieldCheck className="h-4 w-4" />
-                Wallet Balance: {formatLkr(walletBalance)}
-              </div>
+              {isUserAuthenticated ? (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100">
+                  <ShieldCheck className="h-4 w-4" />
+                  Wallet Balance: {formatLkr(walletBalance)}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-[18px] border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm font-semibold text-amber-100">
+                  <div className="flex items-start gap-3">
+                    <Lock className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                    <div>
+                      Login is required only when you are ready to buy a service.
+                      <button
+                        type="button"
+                        onClick={() => navigate('/user/login', { state: { from: location } })}
+                        className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:border-amber-300/40"
+                      >
+                        <LogIn className="h-3.5 w-3.5" />
+                        Login To Order
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleCreateOrder} className="mt-8 space-y-5">
                 <div>
@@ -618,7 +654,7 @@ const SocialBooster = () => {
                   disabled={loading || !selectedService || submitting}
                   className="inline-flex w-full items-center justify-center rounded-[18px] bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-6 py-4 font-bold text-white shadow-[0_18px_40px_rgba(124,58,237,0.28)] transition hover:from-purple-500 hover:via-violet-500 hover:to-fuchsia-500 disabled:opacity-60"
                 >
-                  {submitting ? 'Creating Order...' : 'Create Order'}
+                  {submitting ? 'Creating Order...' : isUserAuthenticated ? 'Create Order' : 'Login To Create Order'}
                 </button>
 
                 {selectedService && walletBalance < totalCharge && totalCharge > 0 && (
@@ -637,7 +673,8 @@ const SocialBooster = () => {
                   </div>
                 </div>
                 <Link
-                  to="/user/orders"
+                  to={isUserAuthenticated ? '/user/orders' : '/user/login'}
+                  state={isUserAuthenticated ? undefined : { from: { pathname: '/user/orders' } }}
                   className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-semibold text-gray-200 transition hover:border-purple-400/30 hover:text-white min-h-[120px] flex items-center justify-center text-center"
                 >
                   View My Booster Orders

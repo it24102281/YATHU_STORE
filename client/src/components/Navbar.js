@@ -83,13 +83,6 @@ const Navbar = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-            <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
-              <img
-                src="/logo.JPG"
-                alt="Yathu Official"
-                className="h-11 w-11 object-cover rounded-xl border border-purple-500/30"
-              />
-            </motion.div>
             <div className="hidden sm:block">
               <span
                 className="font-black text-lg leading-none tracking-tight"
