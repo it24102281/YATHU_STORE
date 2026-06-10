@@ -120,6 +120,7 @@ const FeaturedDeals = ({
           transform: translateZ(0);
           will-change: transform;
           isolation: isolate;
+          outline: none;
         }
 
         .featured-deal-card::before {
@@ -128,7 +129,7 @@ const FeaturedDeals = ({
           inset: -1px;
           border-radius: 1.55rem;
           padding: 1px;
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.08), rgba(216, 180, 254, 0.18), rgba(139, 92, 246, 0.15));
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(216, 180, 254, 0.1), rgba(168, 85, 247, 0.34), rgba(34, 211, 238, 0.16), rgba(139, 92, 246, 0.28));
           background-size: 220% 220%;
           opacity: 0;
           transition: opacity 300ms ease, filter 300ms ease;
@@ -196,16 +197,19 @@ const FeaturedDeals = ({
         }
 
         .featured-deal-card:hover .featured-deal-card-surface,
+        .featured-deal-card:focus-within .featured-deal-card-surface,
         .featured-deal-card.featured-deal-card-active .featured-deal-card-surface {
           background: linear-gradient(145deg, rgba(30,18,41,0.98), rgba(12,12,18,0.96));
         }
 
         .featured-deal-card:hover .featured-deal-card-surface::before,
+        .featured-deal-card:focus-within .featured-deal-card-surface::before,
         .featured-deal-card.featured-deal-card-active .featured-deal-card-surface::before {
           transform: translate(-8px, 8px) scale(1.16);
         }
 
         .featured-deal-card:hover .featured-deal-card-surface::after,
+        .featured-deal-card:focus-within .featured-deal-card-surface::after,
         .featured-deal-card.featured-deal-card-active .featured-deal-card-surface::after {
           transform: rotate(18deg) translate(6px, -6px);
         }
@@ -232,6 +236,7 @@ const FeaturedDeals = ({
         }
 
         .featured-deal-card:hover .featured-deal-card-image::before,
+        .featured-deal-card:focus-within .featured-deal-card-image::before,
         .featured-deal-card.featured-deal-card-active .featured-deal-card-image::before {
           opacity: 1;
         }
@@ -241,6 +246,7 @@ const FeaturedDeals = ({
         }
 
         .featured-deal-card:hover .featured-deal-card-title,
+        .featured-deal-card:focus-within .featured-deal-card-title,
         .featured-deal-card.featured-deal-card-active .featured-deal-card-title {
           filter: brightness(1.08);
         }
@@ -250,6 +256,7 @@ const FeaturedDeals = ({
         }
 
         .featured-deal-card:hover .featured-deal-card-desc,
+        .featured-deal-card:focus-within .featured-deal-card-desc,
         .featured-deal-card.featured-deal-card-active .featured-deal-card-desc {
           color: #baa8d6;
         }
@@ -280,16 +287,29 @@ const FeaturedDeals = ({
         }
 
         .featured-deal-card:hover::before,
+        .featured-deal-card:focus-within::before,
         .featured-deal-card:active::before,
         .featured-deal-card.featured-deal-card-active::before {
           opacity: 1;
-          filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.42)) drop-shadow(0 0 28px rgba(168, 85, 247, 0.26));
+          filter: drop-shadow(0 0 14px rgba(139, 92, 246, 0.72)) drop-shadow(0 0 34px rgba(168, 85, 247, 0.42));
         }
 
         .featured-deal-card:hover::after,
+        .featured-deal-card:focus-within::after,
         .featured-deal-card:active::after,
         .featured-deal-card.featured-deal-card-active::after {
           opacity: 1;
+        }
+
+        .featured-deal-card:hover,
+        .featured-deal-card:focus-within,
+        .featured-deal-card.featured-deal-card-active {
+          border-color: rgba(192, 132, 252, 0.72) !important;
+          box-shadow:
+            0 24px 58px rgba(0, 0, 0, 0.42),
+            0 0 0 1px rgba(216, 180, 254, 0.22),
+            0 0 30px rgba(139, 92, 246, 0.28),
+            0 0 70px rgba(168, 85, 247, 0.16) !important;
         }
 
         @keyframes featuredDealBorderFlow {
@@ -423,6 +443,11 @@ const FeaturedDeals = ({
                   whileHover={{ y: -8, scale: 1.02 }}
                   whileTap={{ scale: 1.01 }}
                   onMouseMove={handleCardPointerMove}
+                  onPointerEnter={() => setActiveCardId(deal._id)}
+                  onPointerLeave={() => setActiveCardId((current) => (current === deal._id ? null : current))}
+                  onFocus={() => setActiveCardId(deal._id)}
+                  onBlur={() => setActiveCardId((current) => (current === deal._id ? null : current))}
+                  onTouchStart={() => setActiveCardId(deal._id)}
                   onClick={() => setActiveCardId(deal._id)}
                   className={`featured-deal-card group relative overflow-hidden rounded-3xl h-full flex flex-col cursor-pointer ${
                     activeCardId === deal._id ? 'featured-deal-card-active' : ''
