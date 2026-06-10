@@ -10,13 +10,21 @@ const getBearerToken = (req) => {
   return null;
 };
 
+const getJwtExpiry = () => process.env.JWT_EXPIRE || '30d';
+
 const signToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    expiresIn: getJwtExpiry(),
   });
 
 const buildUnauthorizedResponse = (res, message) =>
   res.status(401).json({
+    success: false,
+    message,
+  });
+
+const buildForbiddenResponse = (res, message) =>
+  res.status(403).json({
     success: false,
     message,
   });
@@ -97,20 +105,41 @@ const adminMiddleware = async (req, res, next) => {
   }
 
   try {
-    const { actor, actorType } = await resolveActorFromToken(token);
+    const { actor, actorType, decoded } = await resolveActorFromToken(token);
 
-    if (actorType !== 'admin' || !actor.isActive) {
-      return buildUnauthorizedResponse(res, 'Admin access required.');
+    console.log('[Admin Middleware] Token resolved', {
+      actorType,
+      role: decoded?.role,
+      email: decoded?.email || actor?.email || null,
+    });
+
+    if (actorType !== 'admin' || decoded?.role !== 'admin') {
+      console.log('[Admin Middleware] Access denied: non-admin token');
+      return buildForbiddenResponse(res, 'Access denied');
+    }
+
+    if (!actor.isActive) {
+      console.log('[Admin Middleware] Access denied: admin inactive');
+      return buildForbiddenResponse(res, 'Access denied');
     }
 
     req.admin = actor;
     req.auth = {
       type: 'admin',
       id: actor._id,
+      tokenPayload: decoded,
     };
+
+    console.log('[Admin Middleware] Access granted', {
+      adminId: String(actor._id),
+      email: actor.email,
+    });
 
     next();
   } catch (error) {
+    console.log('[Admin Middleware] Invalid token', {
+      message: error.message,
+    });
     return buildUnauthorizedResponse(res, 'Invalid token.');
   }
 };
@@ -145,8 +174,20 @@ const userMiddleware = async (req, res, next) => {
   }
 };
 
-const generateToken = (id) => signToken({ id, type: 'admin' });
-const generateUserToken = (id) => signToken({ id, type: 'user' });
+const generateToken = (admin) =>
+  signToken({
+    id: admin?._id ? String(admin._id) : undefined,
+    email: admin?.email || '',
+    type: 'admin',
+    role: 'admin',
+  });
+const generateUserToken = (user) =>
+  signToken({
+    id: user?._id ? String(user._id) : undefined,
+    email: user?.email || '',
+    type: 'user',
+    role: 'user',
+  });
 
 module.exports = {
   authMiddleware,

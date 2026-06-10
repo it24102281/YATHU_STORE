@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const WhatsAppButton = () => {
   const [hovered, setHovered] = useState(false);
+  const location = useLocation();
   const url = `https://wa.me/94763442220?text=${encodeURIComponent("Hi! I'm interested in buying a gaming account from Yathu Official.")}`;
+
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-7 right-7 z-50 flex flex-col items-end gap-3">

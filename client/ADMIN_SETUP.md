@@ -147,11 +147,11 @@ All admin data is stored in MongoDB:
 
 ## 🚀 Getting Started
 
-### 1. Start Your Backend (Port 5000)
+### 1. Start Your Backend (Port 5001)
 ```bash
-cd backend
+cd server
 npm install
-npm start
+npm run dev
 ```
 
 ### 2. Start Your Frontend (Port 3000)
@@ -220,7 +220,7 @@ http://localhost:3000/admin/login
 ### Can't login?
 - Verify admin account exists in database
 - Check email/password is correct
-- Ensure backend is running on port 5000
+- Ensure backend is running on port 5001
 
 ### Products not showing on store?
 - Check if product `isActive` is true

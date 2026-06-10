@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
+const formatLkr = (value) => `LKR ${Number(value || 0).toFixed(2)}`;
+
 const AdminFinance = () => {
   const { api } = useAuth();
   const [orders, setOrders] = useState([]);
@@ -71,7 +73,7 @@ const AdminFinance = () => {
   const statCards = [
     {
       title: 'Total Revenue',
-      value: `$${metrics.totalRevenue}`,
+      value: formatLkr(metrics.totalRevenue),
       icon: DollarSign,
       color: 'from-green-600 to-green-700'
     },
@@ -89,7 +91,7 @@ const AdminFinance = () => {
     },
     {
       title: 'Average Order Value',
-      value: `$${metrics.averageOrderValue}`,
+      value: formatLkr(metrics.averageOrderValue),
       icon: TrendingUp,
       color: 'from-pink-600 to-pink-700'
     }
@@ -187,7 +189,7 @@ const AdminFinance = () => {
                       </div>
                       <p className="text-white font-medium">{product.name}</p>
                     </div>
-                    <p className="text-green-400 font-bold text-lg">${product.revenue}</p>
+                    <p className="text-green-400 font-bold text-lg">{formatLkr(product.revenue)}</p>
                   </div>
                 ))}
               </div>
@@ -219,7 +221,7 @@ const AdminFinance = () => {
                       <tr key={order._id} className="border-b border-gray-700 hover:bg-gray-900/30 transition-colors">
                         <td className="px-4 py-3 text-gray-300 font-mono text-sm">{String(order._id).slice(-10).toUpperCase()}</td>
                         <td className="px-4 py-3 text-white">{order.user?.fullName}</td>
-                        <td className="px-4 py-3 text-white font-bold">LKR {order.price}</td>
+                        <td className="px-4 py-3 text-white font-bold">{formatLkr(order.price)}</td>
                         <td className="px-4 py-3">
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                             order.orderStatus === 'Completed' ? 'bg-green-500/20 text-green-300' :

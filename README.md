@@ -77,10 +77,15 @@ nano .env
 5. **Start the application**
 ```bash
 # From root directory
-npm run dev
+npm start
 ```
 
-This will start both the frontend (http://localhost:3000) and backend (http://localhost:5000) simultaneously.
+This will start both the frontend (http://localhost:3000) and backend (http://localhost:5001) in local development.
+
+If you only want the API server, use:
+```bash
+npm run start:server
+```
 
 ## 📁 Project Structure
 
@@ -114,7 +119,7 @@ yathu-pubg-store/
 MONGODB_URI=mongodb://localhost:27017/yathu-pubg-store
 
 # Server
-PORT=5000
+PORT=5001
 NODE_ENV=development
 CLIENT_URL=http://localhost:3000
 

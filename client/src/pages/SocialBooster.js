@@ -231,13 +231,6 @@ const SocialBooster = () => {
 
   const walletBalance = Number(customer?.walletBalance || 0);
 
-  const groupedPreview = useMemo(() => {
-    return categories.slice(0, 6).map((groupCategory) => ({
-      category: groupCategory,
-      count: searchedServices.filter((service) => service.category === groupCategory).length,
-    }));
-  }, [categories, searchedServices]);
-
   const resetForm = () => {
     setLink('');
     setQuantity('');
@@ -460,22 +453,6 @@ const SocialBooster = () => {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {groupedPreview.map((group) => (
-                      <div
-                        key={group.category}
-                        className="min-h-[112px] rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-3 flex flex-col justify-between"
-                      >
-                        <div className="text-[0.95rem] font-bold leading-6 text-white break-words [overflow-wrap:anywhere]">
-                          {group.category}
-                        </div>
-                        <div className="mt-3 text-[11px] uppercase tracking-[0.18em] text-gray-500">
-                          {group.count} service packages
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
                   {selectedService && (
                     <div className="mt-8 rounded-[18px] border border-purple-500/20 bg-purple-500/8 p-6">
                       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -514,17 +491,31 @@ const SocialBooster = () => {
                 Choose a category, select a package, review pricing details, and create your order instantly.
               </p>
               {isUserAuthenticated ? (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100">
-                  <ShieldCheck className="h-4 w-4" />
-                  Wallet Balance: {formatLkr(walletBalance)}
-                  <button
-                    type="button"
-                    onClick={() => setIsWalletTopUpOpen(true)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 transition hover:border-emerald-300/50 hover:bg-emerald-400/20"
-                    aria-label="Add funds to wallet"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
+                <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(320px,1fr)_320px] lg:items-end">
+                  <div className="flex h-[74px] items-center gap-3 rounded-[26px] border border-emerald-500/20 bg-emerald-500/10 px-5 text-sm font-semibold text-emerald-100 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span className="whitespace-nowrap">Wallet Balance: {formatLkr(walletBalance)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsWalletTopUpOpen(true)}
+                      className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 transition hover:border-emerald-300/50 hover:bg-emerald-400/20"
+                      aria-label="Add funds to wallet"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="w-full lg:w-[320px]">
+                    <p className="mb-3 text-center text-[1.1rem] font-medium text-white/88">
+                      Looking to Deposit?
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsWalletTopUpOpen(true)}
+                      className="flex h-[74px] w-full items-center justify-center rounded-[26px] border border-emerald-400/30 bg-gradient-to-r from-[#166534] via-[#1f8a4c] to-[#34a853] px-8 text-[1.3rem] font-black uppercase tracking-[0.18em] text-white shadow-[0_20px_44px_rgba(22,101,52,0.28)] transition hover:from-[#15803d] hover:via-[#249c57] hover:to-[#3cb75d]"
+                    >
+                      Deposit Now
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="mt-4 rounded-[18px] border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm font-semibold text-amber-100">
@@ -546,29 +537,6 @@ const SocialBooster = () => {
               )}
 
               <form onSubmit={handleCreateOrder} className="mt-8 space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-300">Selected Package</label>
-                  <select
-                    value={serviceId}
-                    onChange={(event) => setServiceId(event.target.value)}
-                    className={`${fieldStyles} min-w-0 overflow-hidden text-ellipsis whitespace-nowrap pr-12`}
-                    disabled={!packageOptions.length}
-                    title={selectedService ? packageLabel(selectedService, false) : 'Choose a package'}
-                  >
-                    {packageOptions.length === 0 ? (
-                      <option value="" className="bg-[#11111a] text-white">
-                        Choose a package from the left panel
-                      </option>
-                    ) : (
-                      packageOptions.map((item) => (
-                        <option key={item.serviceId} value={item.serviceId} className="bg-[#11111a] text-white">
-                          {packageLabel(item, false)}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-gray-300">Price per 1000</label>

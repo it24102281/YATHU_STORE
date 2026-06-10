@@ -9,6 +9,15 @@ require('dotenv').config();
 
 const app = express();
 
+console.log('[Server Boot] dotenv loaded', {
+  hasMongoUri: Boolean(process.env.MONGODB_URI),
+  hasJwtSecret: Boolean(process.env.JWT_SECRET),
+  jwtExpire: process.env.JWT_EXPIRE || '30d',
+  hasAdminEmail: Boolean(process.env.ADMIN_EMAIL),
+  hasAdminPassword: Boolean(process.env.ADMIN_PASSWORD),
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+});
+
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -135,8 +144,8 @@ app.use('*', (req, res) => {
 const PORT = process.env.PORT || 5001;
 
 const ensureDefaultAdmin = async () => {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
+  const email = process.env.ADMIN_EMAIL || 'yathupubg@gmail.com';
+  const password = process.env.ADMIN_PASSWORD || 'Apple@1234';
 
   if (!email || !password) {
     return;
@@ -170,6 +179,11 @@ mongoose
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log('YATHU PUBG STORE API is ready!');
+      console.log('[Server Boot] Admin auth env ready', {
+        adminEmail: process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null,
+        hasAdminPassword: Boolean(process.env.ADMIN_PASSWORD),
+        jwtExpire: process.env.JWT_EXPIRE || '30d',
+      });
     });
   })
   .catch((error) => {

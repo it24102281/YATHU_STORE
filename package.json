@@ -8,7 +8,8 @@
     "server": "cd server && npm run dev",
     "client": "node scripts/start-client.js",
     "build": "cd client && npm run build",
-    "start": "cd server && npm start"
+    "start": "node scripts/start-root.js",
+    "start:server": "cd server && npm start"
   },
   "keywords": [
     "MERN",

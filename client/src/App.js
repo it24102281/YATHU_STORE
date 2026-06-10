@@ -75,6 +75,7 @@ function App() {
                 <Route path="/user/signup" element={<UserSignup />} />
                 <Route path="/user/forgot-password" element={<UserForgotPassword />} />
                 <Route path="/user/reset-password" element={<UserResetPassword />} />
+                <Route path="/user/dashboard" element={<RequireUserAuth><UserProfile /></RequireUserAuth>} />
                 <Route path="/user/profile" element={<RequireUserAuth><UserProfile /></RequireUserAuth>} />
                 <Route path="/user/orders" element={<RequireUserAuth><UserOrders /></RequireUserAuth>} />
               </Route>

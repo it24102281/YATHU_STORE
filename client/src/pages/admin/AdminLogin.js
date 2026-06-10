@@ -53,12 +53,16 @@ const AdminLogin = () => {
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigate('/admin');
+        console.log('[Frontend Login] Redirect status', {
+          role: result.role || 'admin',
+          redirectTo: result.redirectTo || '/admin/dashboard',
+        });
+        navigate(result.redirectTo || '/admin/dashboard', { replace: true });
       } else {
-        setError(result.message || 'Failed to login');
+        setError(result.message || 'Invalid email or password');
       }
     } catch (err) {
-      setError('An error occurred during login');
+      setError('Invalid email or password');
     } finally {
       setIsLoading(false);
     }
@@ -200,7 +204,7 @@ const AdminLogin = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-white outline-none transition-all placeholder:text-gray-500 focus:border-purple-400/50 focus:bg-white/[0.08] focus:shadow-[0_0_0_4px_rgba(168,85,247,0.08)]"
-                        placeholder="admin@yathupubg.com"
+                        placeholder="Enter your email address"
                         required
                       />
                     </div>
@@ -236,7 +240,7 @@ const AdminLogin = () => {
                       Admin Note
                     </p>
                     <p className="mt-2 text-sm leading-7 text-gray-400">
-                      Use the admin credentials stored in your deployed database. If login fails on production, the deployed backend may be pointing to a different database than your local setup.
+                      Admin access is validated securely by the backend environment and token system. If login fails, verify your backend environment values and deployment configuration.
                     </p>
                   </div>
 

@@ -36,7 +36,6 @@ const UserLogin = () => {
   const [password, setPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [submittingLogin, setSubmittingLogin] = useState(false);
-  const [adminHintVisible, setAdminHintVisible] = useState(false);
 
   const [signupForm, setSignupForm] = useState({
     fullName: '',
@@ -53,13 +52,9 @@ const UserLogin = () => {
   const [verifyingSignup, setVerifyingSignup] = useState(false);
   const [resendingCode, setResendingCode] = useState(false);
 
-  const normalizedIdentifier = identifier.trim().toLowerCase();
-  const looksLikeAdminEmail =
-    normalizedIdentifier === 'admin@yathupubg.com' || normalizedIdentifier.startsWith('admin@');
-
   useEffect(() => {
     if (isUserAuthenticated) {
-      navigate(location.state?.from?.pathname || '/', { replace: true });
+      navigate(location.state?.from?.pathname || '/user/dashboard', { replace: true });
     }
   }, [isUserAuthenticated, location.state, navigate]);
 
@@ -83,25 +78,21 @@ const UserLogin = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
-    if (looksLikeAdminEmail) {
-      setAdminHintVisible(true);
-      toast.error('This page is for customers only. Admins must use /admin/login');
-      return;
-    }
-
     setSubmittingLogin(true);
     const result = await userLogin(identifier, password);
     setSubmittingLogin(false);
 
     if (!result.success) {
-      setAdminHintVisible(false);
       toast.error(result.message);
       return;
     }
 
-    setAdminHintVisible(false);
     toast.success('Login successful');
-    navigate(location.state?.from?.pathname || '/', { replace: true });
+    console.log('[Frontend Login] Redirect status', {
+      role: result.role,
+      redirectTo: result.redirectTo || location.state?.from?.pathname || '/user/dashboard',
+    });
+    navigate(result.redirectTo || location.state?.from?.pathname || '/user/dashboard', { replace: true });
   };
 
   const handleSignupSubmit = async (e) => {
@@ -388,15 +379,7 @@ const UserLogin = () => {
                   <input
                     type="text"
                     value={identifier}
-                    onChange={(e) => {
-                      const nextValue = e.target.value;
-                      setIdentifier(nextValue);
-                      const nextNormalizedIdentifier = nextValue.trim().toLowerCase();
-                      setAdminHintVisible(
-                        nextNormalizedIdentifier === 'admin@yathupubg.com' ||
-                          nextNormalizedIdentifier.startsWith('admin@')
-                      );
-                    }}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     className={authInputClass}
                     placeholder="Email Address"
                     required
@@ -422,19 +405,6 @@ const UserLogin = () => {
                   </button>
                 </div>
               </div>
-
-              {adminHintVisible && (
-                <div className="mt-4 w-full max-w-sm rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-left text-sm text-amber-100">
-                  This page is for customers only. If you are an admin, please use{' '}
-                  <Link
-                    to="/admin/login"
-                    className="font-semibold text-white underline underline-offset-4"
-                  >
-                    /admin/login
-                  </Link>
-                  .
-                </div>
-              )}
 
               <Link
                 to="/user/forgot-password"
@@ -558,15 +528,7 @@ const UserLogin = () => {
                   <input
                     type="text"
                     value={identifier}
-                    onChange={(e) => {
-                      const nextValue = e.target.value;
-                      setIdentifier(nextValue);
-                      const nextNormalizedIdentifier = nextValue.trim().toLowerCase();
-                      setAdminHintVisible(
-                        nextNormalizedIdentifier === 'admin@yathupubg.com' ||
-                          nextNormalizedIdentifier.startsWith('admin@')
-                      );
-                    }}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     className={authInputClass}
                     placeholder="Email Address"
                     required
@@ -592,19 +554,6 @@ const UserLogin = () => {
                   </button>
                 </div>
               </div>
-
-              {adminHintVisible && (
-                <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-left text-sm text-amber-100">
-                  This page is for customers only. If you are an admin, please use{' '}
-                  <Link
-                    to="/admin/login"
-                    className="font-semibold text-white underline underline-offset-4"
-                  >
-                    /admin/login
-                  </Link>
-                  .
-                </div>
-              )}
 
               <Link
                 to="/user/forgot-password"

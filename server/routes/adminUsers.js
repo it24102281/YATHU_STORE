@@ -14,6 +14,20 @@ const formatUser = (user) => ({
   role: user.role,
   status: user.isBlocked ? 'Blocked' : 'Active',
   walletBalance: Number(user.walletBalance || 0),
+  walletHistory: Array.isArray(user.walletHistory)
+    ? user.walletHistory
+        .slice()
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((entry) => ({
+          id: entry._id,
+          amount: Number(entry.amount || 0),
+          type: entry.type,
+          paymentMethod: entry.paymentMethod,
+          details: entry.details,
+          addedBy: entry.addedBy,
+          createdAt: entry.createdAt,
+        }))
+    : [],
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -167,7 +181,7 @@ router.get('/users/:id/orders', adminMiddleware, async (req, res) => {
 
 router.put('/users/:id/wallet', adminMiddleware, async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { amount, paymentMethod, details } = req.body;
     const numericAmount = Number(amount);
 
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
@@ -184,6 +198,14 @@ router.put('/users/:id/wallet', adminMiddleware, async (req, res) => {
     }
 
     user.walletBalance = Number((Number(user.walletBalance || 0) + numericAmount).toFixed(2));
+    user.walletHistory.push({
+      amount: numericAmount,
+      type: 'credit',
+      paymentMethod: paymentMethod?.trim() || 'Manual Wallet Credit',
+      details: details?.trim() || 'Fund added to wallet',
+      addedBy: req.user?._id || null,
+      createdAt: new Date(),
+    });
     await user.save();
 
     return res.json({

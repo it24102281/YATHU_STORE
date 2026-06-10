@@ -5,6 +5,45 @@ const validator = require('validator');
 
 const whatsappRegex = /^[0-9+\-\s()]{8,20}$/;
 
+const walletHistorySchema = new mongoose.Schema(
+  {
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    type: {
+      type: String,
+      enum: ['credit'],
+      default: 'credit',
+    },
+    paymentMethod: {
+      type: String,
+      default: 'Manual Wallet Credit',
+      trim: true,
+    },
+    details: {
+      type: String,
+      default: 'Fund added to wallet',
+      trim: true,
+      maxlength: [200, 'Wallet history details cannot exceed 200 characters'],
+    },
+    addedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    _id: true,
+    versionKey: false,
+  }
+);
+
 const userSchema = new mongoose.Schema(
   {
     fullName: {
@@ -57,6 +96,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       min: 0,
       default: 0,
+    },
+    walletHistory: {
+      type: [walletHistorySchema],
+      default: [],
     },
     signupVerificationCode: {
       type: String,
@@ -129,6 +172,20 @@ userSchema.methods.toSafeObject = function toSafeObject() {
     isEmailVerified: this.isEmailVerified,
     isBlocked: this.isBlocked,
     walletBalance: this.walletBalance,
+    walletHistory: Array.isArray(this.walletHistory)
+      ? this.walletHistory
+          .slice()
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .map((entry) => ({
+            id: entry._id,
+            amount: entry.amount,
+            type: entry.type,
+            paymentMethod: entry.paymentMethod,
+            details: entry.details,
+            addedBy: entry.addedBy,
+            createdAt: entry.createdAt,
+          }))
+      : [],
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

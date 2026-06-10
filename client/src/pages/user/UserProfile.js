@@ -24,7 +24,7 @@ import { termsSections } from '../../data/termsContent';
 const tabs = [
   { id: 'profile', label: 'Profile Settings', icon: UserCircle2, note: 'Name and contact details' },
   { id: 'password', label: 'Change Password', icon: Lock, note: 'Security and password updates' },
-  { id: 'funds', label: 'Fund Added History', icon: Wallet, note: 'Completed paid activity' },
+  { id: 'funds', label: 'Fund Added History', icon: Wallet, note: 'Wallet deposits only' },
   { id: 'tracker', label: 'Fund Tracker', icon: Activity, note: 'Pending and completed progress' },
   { id: 'terms', label: 'Terms', icon: FileText, note: 'Store rules and policy notes' },
 ];
@@ -80,19 +80,25 @@ const UserProfile = () => {
   const customerInitial = customer?.fullName?.trim()?.charAt(0)?.toUpperCase() || 'U';
   const labelClass = 'ml-1 text-sm font-semibold text-gray-300';
   const inputClass = 'w-full rounded-2xl border border-white/10 bg-white/5 py-4 px-4 text-white outline-none focus:border-purple-400/50';
+  const walletHistory = useMemo(
+    () =>
+      Array.isArray(customer?.walletHistory)
+        ? [...customer.walletHistory].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        : [],
+    [customer?.walletHistory]
+  );
 
   const fundSummary = useMemo(() => {
-    const paidOrders = orders.filter((order) => order.paymentStatus === 'Paid');
-    const totalPaid = paidOrders.reduce((sum, order) => sum + Number(order.price || 0), 0);
+    const totalAdded = walletHistory.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
     const pendingOrders = orders.filter((order) => ['Pending', 'Processing', 'Unpaid'].includes(order.orderStatus) || ['Pending', 'Unpaid'].includes(order.paymentStatus));
 
     return {
-      totalPaid,
-      paidCount: paidOrders.length,
+      totalAdded,
+      addedCount: walletHistory.length,
       pendingCount: pendingOrders.length,
-      lastAddedAt: paidOrders[0]?.createdAt || null,
+      lastAddedAt: walletHistory[0]?.createdAt || null,
     };
-  }, [orders]);
+  }, [orders, walletHistory]);
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -207,16 +213,16 @@ const UserProfile = () => {
             Wallet History
           </div>
           <h2 className="text-2xl font-black text-white">Fund Added History</h2>
-          <p className="mt-2 text-sm text-gray-400">Your paid orders and completed top-ups will appear here.</p>
+          <p className="mt-2 text-sm text-gray-400">Only real wallet deposits and fund additions will appear here.</p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-5">
               <div className="text-sm text-emerald-300">Total Added</div>
-              <div className="mt-2 text-3xl font-black text-white">LKR {fundSummary.totalPaid.toLocaleString()}</div>
+              <div className="mt-2 text-3xl font-black text-white">LKR {fundSummary.totalAdded.toLocaleString()}</div>
             </div>
             <div className="rounded-3xl border border-purple-500/20 bg-purple-500/10 p-5">
               <div className="text-sm text-purple-300">Successful Adds</div>
-              <div className="mt-2 text-3xl font-black text-white">{fundSummary.paidCount}</div>
+              <div className="mt-2 text-3xl font-black text-white">{fundSummary.addedCount}</div>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
               <div className="text-sm text-gray-400">Latest Added</div>
@@ -231,25 +237,23 @@ const UserProfile = () => {
               <div className="py-16 flex justify-center">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500/20 border-t-purple-500" />
               </div>
-            ) : orders.filter((order) => order.paymentStatus === 'Paid').length === 0 ? (
+            ) : walletHistory.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] px-6 py-14 text-center">
                 <Wallet className="mx-auto h-10 w-10 text-purple-400/70" />
                 <h3 className="mt-4 text-xl font-bold text-white">No fund history yet</h3>
-                <p className="mt-2 text-gray-400">When customers pay for packages or top-ups, that record will appear here.</p>
+                <p className="mt-2 text-gray-400">This section will show records only after funds are actually added to your wallet.</p>
               </div>
             ) : (
-              orders
-                .filter((order) => order.paymentStatus === 'Paid')
-                .map((order) => (
-                  <div key={order.id} className="rounded-3xl border border-white/8 bg-white/[0.03] p-5">
+              walletHistory.map((entry) => (
+                  <div key={entry.id} className="rounded-3xl border border-white/8 bg-white/[0.03] p-5">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <div className="text-lg font-bold text-white">{order.productName}</div>
-                        <div className="mt-1 text-sm text-gray-400">{order.category || 'General'}</div>
+                        <div className="text-lg font-bold text-white">{entry.paymentMethod || 'Wallet Deposit'}</div>
+                        <div className="mt-1 text-sm text-gray-400">{entry.details || 'Fund added to wallet'}</div>
                       </div>
                       <div className="text-left md:text-right">
-                        <div className="text-2xl font-black text-white">LKR {Number(order.price || 0).toLocaleString()}</div>
-                        <div className="mt-1 text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()}</div>
+                        <div className="text-2xl font-black text-white">LKR {Number(entry.amount || 0).toLocaleString()}</div>
+                        <div className="mt-1 text-sm text-gray-500">{entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '-'}</div>
                       </div>
                     </div>
                   </div>
@@ -297,6 +301,88 @@ const UserProfile = () => {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-black text-white">Purchased Orders</h3>
+                <p className="mt-1 text-sm text-gray-400">All your recent order activity appears here.</p>
+              </div>
+            </div>
+
+            {ordersLoading ? (
+              <div className="py-16 flex justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500/20 border-t-blue-500" />
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] px-6 py-14 text-center">
+                <Package2 className="mx-auto h-10 w-10 text-blue-400/70" />
+                <h3 className="mt-4 text-xl font-bold text-white">No purchased orders yet</h3>
+                <p className="mt-2 text-gray-400">Your placed orders will show here once you start purchasing from the store.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <div key={order.id} className="rounded-3xl border border-white/8 bg-white/[0.03] p-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-lg font-bold text-white">{order.productName || order.serviceName || 'Order'}</div>
+                        <div className="mt-1 text-sm text-gray-400">
+                          {[order.category, order.platform].filter(Boolean).join(' • ') || 'General'}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                          <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-purple-200">
+                            Payment: {order.paymentStatus || 'Unknown'}
+                          </span>
+                          <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-blue-200">
+                            Order: {order.orderStatus || 'Pending'}
+                          </span>
+                          {order.quantity ? (
+                            <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-gray-200">
+                              Qty: {order.quantity}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                          <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Qty</div>
+                            <div className="mt-1 text-base font-bold text-white">{order.cidQuantity ?? '-'}</div>
+                          </div>
+                          <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Remains</div>
+                            <div className="mt-1 text-base font-bold text-white">{order.cidRemains ?? '-'}</div>
+                          </div>
+                          <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Start</div>
+                            <div className="mt-1 text-base font-bold text-white">{order.cidStartCount ?? '-'}</div>
+                          </div>
+                          <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">End</div>
+                            <div className="mt-1 text-base font-bold text-white">{order.cidEndCount ?? '-'}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-left lg:text-right">
+                        <div className="text-2xl font-black text-white">
+                          LKR {Number(order.price || order.totalLkr || 0).toLocaleString()}
+                        </div>
+                        <div className="mt-1 text-sm text-gray-500">
+                          {order.createdAt ? new Date(order.createdAt).toLocaleString() : '-'}
+                        </div>
+                        {order.orderId ? (
+                          <div className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">
+                            Order ID: {order.orderId}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );

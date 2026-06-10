@@ -18,6 +18,20 @@ const getSafeUser = (user) => ({
   role: user.role,
   status: user.isBlocked ? 'Blocked' : 'Active',
   walletBalance: Number(user.walletBalance || 0),
+  walletHistory: Array.isArray(user.walletHistory)
+    ? user.walletHistory
+        .slice()
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((entry) => ({
+          id: entry._id,
+          amount: Number(entry.amount || 0),
+          type: entry.type,
+          paymentMethod: entry.paymentMethod,
+          details: entry.details,
+          addedBy: entry.addedBy,
+          createdAt: entry.createdAt,
+        }))
+    : [],
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });

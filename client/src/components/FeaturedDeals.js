@@ -65,6 +65,7 @@ const FeaturedDeals = ({
     if (normalizedQuery) {
       nextDeals = nextDeals.filter((deal) => {
         const searchableText = [
+          
           deal.title,
           deal.category,
           deal.subCategory,

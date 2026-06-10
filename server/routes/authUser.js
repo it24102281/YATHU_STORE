@@ -1,14 +1,16 @@
 const crypto = require('crypto');
 const express = require('express');
 const validator = require('validator');
+const Admin = require('../models/Admin');
 const User = require('../models/User');
-const { generateUserToken, userMiddleware } = require('../middleware/auth');
+const { generateToken, generateUserToken, userMiddleware } = require('../middleware/auth');
 const { sendEmail, hasSmtpConfig } = require('../utils/sendEmail');
 
 const router = express.Router();
 
 const whatsappRegex = /^[0-9+\-\s()]{8,20}$/;
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
 
 const getSignupErrorResponse = (error) => {
   if (error?.code === 11000) {
@@ -70,6 +72,43 @@ const getSafeUser = (user) => ({
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
+
+const getSafeAdmin = (admin) => ({
+  id: admin._id,
+  name: admin.name,
+  email: admin.email,
+  role: admin.role || 'admin',
+  lastLogin: admin.lastLogin,
+});
+
+const normalizeEmail = (value = '') => value.trim().toLowerCase();
+const normalizeIdentifier = (value = '') => value.trim();
+
+const ensureEnvAdminRecord = async () => {
+  const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL);
+  const adminPassword = process.env.ADMIN_PASSWORD || '';
+
+  if (!adminEmail || !adminPassword) {
+    return null;
+  }
+
+  let admin = await Admin.findOne({ email: adminEmail });
+
+  if (!admin) {
+    admin = await Admin.create({
+      name: 'Admin',
+      email: adminEmail,
+      password: adminPassword,
+      role: 'admin',
+      isActive: true,
+    });
+  } else if (!admin.isActive) {
+    admin.isActive = true;
+    await admin.save();
+  }
+
+  return admin;
+};
 
 const sendSignupVerificationEmail = async (user, code) => {
   await sendEmail({
@@ -272,22 +311,78 @@ router.post('/login', async (req, res) => {
   try {
     const { identifier, password } = req.body;
 
+    console.log('[Auth Login] Admin login attempt via shared login route');
+
     if (!identifier?.trim() || !password) {
+      console.log('[Auth Login] Missing identifier or password');
       return res.status(400).json({
         success: false,
-        message: 'Please provide your email or WhatsApp number and password',
+        message: INVALID_LOGIN_MESSAGE,
       });
     }
 
-    const normalizedIdentifier = identifier.trim();
+    const normalizedIdentifier = normalizeIdentifier(identifier);
+    const normalizedEmail = validator.isEmail(normalizedIdentifier)
+      ? normalizeEmail(normalizedIdentifier)
+      : '';
+    const envAdminEmail = normalizeEmail(process.env.ADMIN_EMAIL);
+    const envAdminPassword = process.env.ADMIN_PASSWORD || '';
+
+    console.log('[Auth Login] Email received', {
+      identifier: normalizedIdentifier,
+      normalizedEmail: normalizedEmail || null,
+    });
+
+    if (
+      normalizedEmail &&
+      envAdminEmail &&
+      normalizedEmail === envAdminEmail &&
+      password === envAdminPassword
+    ) {
+      console.log('[Auth Login] Admin match success');
+      const admin = await ensureEnvAdminRecord();
+
+      if (!admin) {
+        console.log('[Auth Login] Admin env configured incorrectly');
+        return res.status(500).json({
+          success: false,
+          message: 'Admin account is not configured correctly',
+        });
+      }
+
+      await admin.updateLastLogin();
+      const token = generateToken(admin);
+
+      console.log('[Auth Login] JWT generation status', {
+        success: Boolean(token),
+        role: 'admin',
+        adminId: String(admin._id),
+        email: admin.email,
+      });
+
+      return res.json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          token,
+          role: 'admin',
+          redirectTo: '/admin/dashboard',
+          admin: getSafeAdmin(admin),
+        },
+      });
+    }
+
+    console.log('[Auth Login] Admin match failure, continuing to normal user lookup');
+
     const query = validator.isEmail(normalizedIdentifier)
-      ? { email: normalizedIdentifier.toLowerCase() }
+      ? { email: normalizedEmail }
       : { whatsappNumber: normalizedIdentifier };
 
     const user = await User.findOne(query).select('+password');
 
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid login details' });
+      console.log('[Auth Login] Normal user lookup failed');
+      return res.status(401).json({ success: false, message: INVALID_LOGIN_MESSAGE });
     }
 
     if (!user.isEmailVerified) {
@@ -307,18 +402,35 @@ router.post('/login', async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ success: false, message: 'Invalid login details' });
+      console.log('[Auth Login] Normal user password mismatch', {
+        email: user.email,
+      });
+      return res.status(401).json({ success: false, message: INVALID_LOGIN_MESSAGE });
     }
+
+    const token = generateUserToken(user);
+
+    console.log('[Auth Login] JWT generation status', {
+      success: Boolean(token),
+      role: 'user',
+      userId: String(user._id),
+      email: user.email,
+    });
 
     return res.json({
       success: true,
       message: 'Login successful',
       data: {
-        token: generateUserToken(user._id),
+        token,
+        role: 'user',
+        redirectTo: '/user/dashboard',
         user: getSafeUser(user),
       },
     });
   } catch (error) {
+    console.log('[Auth Login] Login route error', {
+      message: error.message,
+    });
     return res.status(500).json({
       success: false,
       message: 'Server error during login',

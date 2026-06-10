@@ -5,8 +5,26 @@ const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '
 
 const AuthContext = createContext();
 
-const getStoredAdminToken = () => localStorage.getItem('adminToken') || localStorage.getItem('token');
-const getStoredUserToken = () => localStorage.getItem('userToken');
+const getStorage = () => (typeof window !== 'undefined' ? window.sessionStorage : null);
+const getLegacyStorage = () => (typeof window !== 'undefined' ? window.localStorage : null);
+const readStoredValue = (key) => getStorage()?.getItem(key) || getLegacyStorage()?.getItem(key) || null;
+const writeStoredValue = (key, value) => {
+  getStorage()?.setItem(key, value);
+  getLegacyStorage()?.removeItem(key);
+};
+const removeStoredValue = (key) => {
+  getStorage()?.removeItem(key);
+  getLegacyStorage()?.removeItem(key);
+};
+const clearAdminTokens = () => {
+  removeStoredValue('token');
+  removeStoredValue('adminToken');
+};
+const clearUserTokens = () => {
+  removeStoredValue('userToken');
+};
+const getStoredAdminToken = () => readStoredValue('adminToken') || readStoredValue('token');
+const getStoredUserToken = () => readStoredValue('userToken');
 const API_UNAVAILABLE_MESSAGE = 'Cannot reach the server. Please check that the backend API is running and allowed for this website.';
 
 const initialState = {
@@ -26,14 +44,19 @@ const initialState = {
 const authReducer = (state, action) => {
   switch (action.type) {
     case 'ADMIN_LOGIN_SUCCESS':
-      localStorage.setItem('token', action.payload.token);
-      localStorage.setItem('adminToken', action.payload.token);
+      writeStoredValue('token', action.payload.token);
+      writeStoredValue('adminToken', action.payload.token);
+      clearUserTokens();
       return {
         ...state,
         adminToken: action.payload.token,
         admin: action.payload.admin,
         isAuthenticated: true,
+        userToken: null,
+        customer: null,
+        isUserAuthenticated: false,
         adminLoading: false,
+        userLoading: false,
         loading: false,
         error: null,
       };
@@ -54,8 +77,7 @@ const authReducer = (state, action) => {
         error: null,
       };
     case 'ADMIN_LOAD_FAIL':
-      localStorage.removeItem('token');
-      localStorage.removeItem('adminToken');
+      clearAdminTokens();
       return {
         ...state,
         adminToken: null,
@@ -66,8 +88,7 @@ const authReducer = (state, action) => {
         error: action.payload,
       };
     case 'ADMIN_LOGOUT':
-      localStorage.removeItem('token');
-      localStorage.removeItem('adminToken');
+      clearAdminTokens();
       return {
         ...state,
         adminToken: null,
@@ -78,14 +99,19 @@ const authReducer = (state, action) => {
         error: null,
       };
     case 'USER_LOGIN_SUCCESS':
-      localStorage.setItem('userToken', action.payload.token);
+      writeStoredValue('userToken', action.payload.token);
+      clearAdminTokens();
       return {
         ...state,
+        adminToken: null,
+        admin: null,
+        isAuthenticated: false,
         userToken: action.payload.token,
         customer: action.payload.user,
         isUserAuthenticated: true,
+        adminLoading: false,
         userLoading: false,
-        loading: state.adminLoading,
+        loading: false,
         userError: null,
       };
     case 'USER_LOGIN_FAIL':
@@ -105,7 +131,7 @@ const authReducer = (state, action) => {
         userError: null,
       };
     case 'USER_LOAD_FAIL':
-      localStorage.removeItem('userToken');
+      clearUserTokens();
       return {
         ...state,
         userToken: null,
@@ -116,7 +142,7 @@ const authReducer = (state, action) => {
         userError: action.payload,
       };
     case 'USER_LOGOUT':
-      localStorage.removeItem('userToken');
+      clearUserTokens();
       return {
         ...state,
         userToken: null,
@@ -247,6 +273,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('[Frontend Auth] Admin login submit', {
+        email: (email || '').trim().toLowerCase(),
+      });
       dispatch({ type: 'SET_ADMIN_LOADING', payload: true });
       const res = await api.post('/admin/login', { email, password });
       const token = res.data?.data?.token;
@@ -261,7 +290,17 @@ export const AuthProvider = ({ children }) => {
         payload: { token, admin },
       });
 
-      return { success: true, data: res.data };
+      console.log('[Frontend Auth] Admin token stored', {
+        role: res.data?.data?.role || 'admin',
+        redirectTo: res.data?.data?.redirectTo || '/admin/dashboard',
+      });
+
+      return {
+        success: true,
+        data: res.data,
+        role: res.data?.data?.role || 'admin',
+        redirectTo: res.data?.data?.redirectTo || '/admin/dashboard',
+      };
     } catch (err) {
       const message = getRequestErrorMessage(err, 'Login failed');
       dispatch({
@@ -274,9 +313,36 @@ export const AuthProvider = ({ children }) => {
 
   const userLogin = async (identifier, password) => {
     try {
+      console.log('[Frontend Auth] Shared login submit', {
+        identifier: (identifier || '').trim(),
+      });
       dispatch({ type: 'SET_USER_LOADING', payload: true });
       const res = await api.post('/auth/user/login', { identifier, password });
       const token = res.data?.data?.token;
+      const role = res.data?.data?.role;
+
+      if (role === 'admin') {
+        const admin = res.data?.data?.admin;
+
+        dispatch({
+          type: 'ADMIN_LOGIN_SUCCESS',
+          payload: { token, admin },
+        });
+
+        console.log('[Frontend Auth] Redirect status', {
+          role: 'admin',
+          redirectTo: res.data?.data?.redirectTo || '/admin/dashboard',
+        });
+
+        return {
+          success: true,
+          role: 'admin',
+          redirectTo: res.data?.data?.redirectTo || '/admin/dashboard',
+          message: res.data?.message || 'Login successful',
+          data: admin,
+        };
+      }
+
       const user = res.data?.data?.user;
 
       dispatch({
@@ -284,9 +350,20 @@ export const AuthProvider = ({ children }) => {
         payload: { token, user },
       });
 
-      return { success: true, message: res.data?.message || 'Login successful', data: user };
+      console.log('[Frontend Auth] Redirect status', {
+        role: 'user',
+        redirectTo: res.data?.data?.redirectTo || '/user/dashboard',
+      });
+
+      return {
+        success: true,
+        role: 'user',
+        redirectTo: res.data?.data?.redirectTo || '/user/dashboard',
+        message: res.data?.message || 'Login successful',
+        data: user,
+      };
     } catch (err) {
-      const message = getRequestErrorMessage(err, 'Invalid login details');
+      const message = getRequestErrorMessage(err, 'Invalid email or password');
       dispatch({
         type: 'USER_LOGIN_FAIL',
         payload: message,

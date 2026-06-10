@@ -592,7 +592,7 @@ const Home = () => {
                       textShadow: '0 0 28px rgba(168,85,247,0.55)',
                     }}
                   >
-                    growth
+                    Booster
                   </span>
                 </h1>
                 <p className="text-xl font-semibold tracking-[0.02em] text-gray-300 sm:text-2xl" style={{ fontFamily: 'Rajdhani, Poppins, sans-serif' }}>
