@@ -194,8 +194,13 @@ const verifySmtpOnStartup = async () => {
       user: process.env.SMTP_USER,
       from: process.env.EMAIL_FROM,
     });
-    await verifySmtpTransporter();
-    console.log('[SMTP] Transport verified successfully.');
+    const verifiedConfig = await verifySmtpTransporter();
+    console.log('[SMTP] Transport verified successfully.', {
+      host: verifiedConfig.host,
+      port: verifiedConfig.port,
+      secure: verifiedConfig.secure,
+      family: verifiedConfig.family,
+    });
   } catch (error) {
     console.error('[SMTP] Transport verification failed:', error.message);
   }
