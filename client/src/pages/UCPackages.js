@@ -14,9 +14,9 @@ import {
   Zap,
 } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const WHATSAPP_NUMBER = '94763442220';
-const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
 const DESCRIPTION_PREVIEW_LIMIT = 40;
 
 const badgeConfig = {

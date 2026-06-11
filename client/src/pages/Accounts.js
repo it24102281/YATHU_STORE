@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import axios from 'axios';
 import AccountCard from '../components/AccountCard';
-
-const API_BASE_URL = (process.env.REACT_APP_API_URL || '/api').replace(/\/+$/, '');
+import { API_BASE_URL } from '../config/api';
 
 const SORT_OPTIONS = [
   { value: 'createdAt-desc', label: 'Newest First' },
