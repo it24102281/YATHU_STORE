@@ -21,28 +21,49 @@ import connectDB from './config/db.js';
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+const API_VERSION = process.env.npm_package_version || '1.0.0';
+const configuredFrontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // ==================== MIDDLEWARE ====================
 // CORS Configuration
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+const allowedOrigins = configuredFrontendUrl
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const isAllowedOrigin = (origin) => {
+  if (!origin) {
+    return true;
+  }
+
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  try {
+    const { hostname, protocol } = new URL(origin);
+    return protocol === 'https:' && hostname.endsWith('.vercel.app');
+  } catch (error) {
+    return false;
+  }
+};
+
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
 
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
@@ -52,10 +73,20 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 connectDB();
 
 // ==================== BASIC ROUTES ====================
-app.get('/api/health', (req, res) => {
-  res.json({
+app.get('/', (req, res) => {
+  res.status(200).json({
     success: true,
-    message: '🟢 Backend server is running',
+    message: 'YATHU OFFICIAL API Running',
+    version: API_VERSION,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'YATHU OFFICIAL Backend Running',
+    version: API_VERSION,
     timestamp: new Date().toISOString(),
   });
 });
@@ -69,35 +100,21 @@ app.use('/api/uc-packages', ucPackageRoutes);
 app.use('/api/accounts', accountRoutes);
 
 // ==================== ERROR HANDLING ====================
-// 404 Not Found
 app.use(notFound);
-
-// Global error handler
 app.use(errorHandler);
 
 // ==================== SERVER START ====================
-const PORT = process.env.PORT || 5000;
-
 const server = app.listen(PORT, () => {
-  console.log('\n' + '='.repeat(50));
-  console.log('🚀 YATHU PUBG BACKEND SERVER');
-  console.log('='.repeat(50));
-  console.log(`✅ Server running on: http://localhost:${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
-  console.log('='.repeat(50));
-  console.log('\nAvailable API Routes:');
-  console.log('  🔐 Auth: /api/auth (register, login, admin-login)');
-  console.log('  📦 Products: /api/products (CRUD operations)');
-  console.log('  🛒 Orders: /api/orders (create, view, manage)');
-  console.log('  👤 Users: /api/users (profile, admin operations)');
-  console.log('  💚 Health: /api/health (server status)');
-  console.log('='.repeat(50) + '\n');
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`FRONTEND_URL: ${configuredFrontendUrl}`);
+  console.log(`Allowed frontend origins: ${allowedOrigins.join(', ') || 'none configured'}`);
+  console.log('Registered API routes: /, /api/health, /api/auth, /api/products, /api/orders, /api/users, /api/uc-packages, /api/accounts');
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-  console.error('❌ Unhandled Rejection:', err.message);
+  console.error('Unhandled Rejection:', err.message);
   server.close(() => process.exit(1));
 });
 
