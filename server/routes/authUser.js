@@ -11,6 +11,8 @@ const router = express.Router();
 const whatsappRegex = /^[0-9+\-\s()]{8,20}$/;
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
+const isSmtpDeliveryError = (error) =>
+  error?.code === 'SMTP_CONNECTION_FAILED' || String(error?.message || '').toLowerCase().includes('smtp');
 
 const getSignupErrorResponse = (error) => {
   if (error?.code === 11000) {
@@ -31,7 +33,7 @@ const getSignupErrorResponse = (error) => {
     };
   }
 
-  if (error?.code === 'SMTP_CONNECTION_FAILED' || String(error?.message || '').toLowerCase().includes('smtp')) {
+  if (isSmtpDeliveryError(error)) {
     return {
       status: 500,
       message: 'Verification email could not be sent right now. Please try again in a moment.',
@@ -47,9 +49,9 @@ const getSignupErrorResponse = (error) => {
 const getEmailDeliveryErrorResponse = (error, fallbackMessage) => {
   const normalizedMessage = String(error?.message || '').trim();
 
-  if (error?.code === 'SMTP_CONNECTION_FAILED' || normalizedMessage.toLowerCase().includes('smtp')) {
+  if (isSmtpDeliveryError(error)) {
     return {
-      status: 500,
+      status: 503,
       message: fallbackMessage,
     };
   }
@@ -202,7 +204,28 @@ router.post('/signup', async (req, res) => {
 
     const signupCode = user.createSignupVerificationCode();
     await user.save();
-    await sendSignupVerificationEmail(user, signupCode);
+    try {
+      await sendSignupVerificationEmail(user, signupCode);
+    } catch (emailError) {
+      if (!isSmtpDeliveryError(emailError)) {
+        throw emailError;
+      }
+
+      console.error('[Signup Email] Verification email failed:', emailError.message);
+      user.isEmailVerified = true;
+      user.signupVerificationCode = undefined;
+      user.signupVerificationExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Account created successfully. You can sign in now.',
+        data: {
+          email: user.email,
+          emailDelivery: false,
+        },
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -385,13 +408,6 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: INVALID_LOGIN_MESSAGE });
     }
 
-    if (!user.isEmailVerified) {
-      return res.status(403).json({
-        success: false,
-        message: 'Please verify your email before signing in.',
-      });
-    }
-
     if (user.isBlocked) {
       return res.status(403).json({
         success: false,
@@ -406,6 +422,16 @@ router.post('/login', async (req, res) => {
         email: user.email,
       });
       return res.status(401).json({ success: false, message: INVALID_LOGIN_MESSAGE });
+    }
+
+    if (!user.isEmailVerified) {
+      console.warn('[Auth Login] Auto-verifying user after successful password login because email verification was incomplete', {
+        email: user.email,
+      });
+      user.isEmailVerified = true;
+      user.signupVerificationCode = undefined;
+      user.signupVerificationExpire = undefined;
+      await user.save({ validateBeforeSave: false });
     }
 
     const token = generateUserToken(user);
@@ -470,34 +496,50 @@ router.post('/forgot-password', async (req, res) => {
       });
     }
 
-    await sendEmail({
-      to: user.email,
-      subject: 'Reset your YATHU PUBG STORE password',
-      text: `Reset your YATHU PUBG STORE password using this secure link: ${resetUrl}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; background: #0a0a0a; color: #f5f5f5; padding: 32px;">
-          <div style="max-width: 560px; margin: 0 auto; background: #111111; border: 1px solid rgba(168,85,247,0.2); border-radius: 20px; overflow: hidden;">
-            <div style="height: 4px; background: linear-gradient(90deg, transparent, #a855f7, transparent);"></div>
-            <div style="padding: 32px;">
-              <p style="color: #c084fc; font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase; font-weight: 700; margin: 0 0 16px;">YATHU PUBG STORE</p>
-              <h1 style="margin: 0 0 16px; font-size: 28px; line-height: 1.2;">Reset Your Password</h1>
-              <p style="margin: 0 0 24px; color: #d1d5db; line-height: 1.7;">
-                We received a request to reset your customer account password. Use the secure button below to choose a new password.
-              </p>
-              <a href="${resetUrl}" style="display: inline-block; padding: 14px 24px; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #ffffff; text-decoration: none; font-weight: 700;">
-                Reset Password
-              </a>
-              <p style="margin: 24px 0 0; color: #9ca3af; line-height: 1.7;">
-                This link expires in 30 minutes. If you did not request this reset, you can safely ignore this email.
-              </p>
-              <p style="margin: 16px 0 0; color: #9ca3af; word-break: break-all;">
-                ${resetUrl}
-              </p>
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset your YATHU PUBG STORE password',
+        text: `Reset your YATHU PUBG STORE password using this secure link: ${resetUrl}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #0a0a0a; color: #f5f5f5; padding: 32px;">
+            <div style="max-width: 560px; margin: 0 auto; background: #111111; border: 1px solid rgba(168,85,247,0.2); border-radius: 20px; overflow: hidden;">
+              <div style="height: 4px; background: linear-gradient(90deg, transparent, #a855f7, transparent);"></div>
+              <div style="padding: 32px;">
+                <p style="color: #c084fc; font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase; font-weight: 700; margin: 0 0 16px;">YATHU PUBG STORE</p>
+                <h1 style="margin: 0 0 16px; font-size: 28px; line-height: 1.2;">Reset Your Password</h1>
+                <p style="margin: 0 0 24px; color: #d1d5db; line-height: 1.7;">
+                  We received a request to reset your customer account password. Use the secure button below to choose a new password.
+                </p>
+                <a href="${resetUrl}" style="display: inline-block; padding: 14px 24px; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #ffffff; text-decoration: none; font-weight: 700;">
+                  Reset Password
+                </a>
+                <p style="margin: 24px 0 0; color: #9ca3af; line-height: 1.7;">
+                  This link expires in 30 minutes. If you did not request this reset, you can safely ignore this email.
+                </p>
+                <p style="margin: 16px 0 0; color: #9ca3af; word-break: break-all;">
+                  ${resetUrl}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      `,
-    });
+        `,
+      });
+    } catch (emailError) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      if (!isSmtpDeliveryError(emailError)) {
+        throw emailError;
+      }
+
+      console.error('[Forgot Password] Reset email failed:', emailError.message);
+      return res.status(503).json({
+        success: false,
+        message: 'Password reset email could not be sent right now. Please try again later.',
+      });
+    }
 
     return res.json({
       success: true,
