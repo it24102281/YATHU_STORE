@@ -5,7 +5,7 @@ let transporterVerified = false;
 
 const getRequiredEnv = (key) => process.env[key]?.trim();
 const getBooleanEnv = (key) => /^(true|1|yes)$/i.test(getRequiredEnv(key) || '');
-const getSenderAddress = () => getRequiredEnv('EMAIL_FROM') || getRequiredEnv('SMTP_FROM') || getRequiredEnv('SMTP_USER');
+const getSenderAddress = () => getRequiredEnv('EMAIL_FROM') || getRequiredEnv('SMTP_USER');
 
 const hasSmtpConfig = () =>
   Boolean(
@@ -34,6 +34,7 @@ const getTransporter = () => {
     host: getRequiredEnv('SMTP_HOST'),
     port,
     secure,
+    family: 4,
     requireTLS: getRequiredEnv('SMTP_REQUIRE_TLS')
       ? getBooleanEnv('SMTP_REQUIRE_TLS')
       : port === 587,
@@ -49,16 +50,25 @@ const getTransporter = () => {
   return cachedTransporter;
 };
 
+const verifySmtpTransporter = async () => {
+  const transporter = getTransporter();
+
+  try {
+    await transporter.verify();
+    transporterVerified = true;
+    return true;
+  } catch (error) {
+    const smtpError = new Error(`SMTP connection failed: ${error.message}`);
+    smtpError.code = 'SMTP_CONNECTION_FAILED';
+    throw smtpError;
+  }
+};
+
 const sendEmail = async ({ to, subject, html, text }) => {
   const transporter = getTransporter();
 
   if (!transporterVerified) {
-    try {
-      await transporter.verify();
-      transporterVerified = true;
-    } catch (error) {
-      throw new Error(`SMTP connection failed: ${error.message}`);
-    }
+    await verifySmtpTransporter();
   }
 
   const info = await transporter.sendMail({
@@ -75,4 +85,4 @@ const sendEmail = async ({ to, subject, html, text }) => {
   };
 };
 
-module.exports = { sendEmail, hasSmtpConfig };
+module.exports = { sendEmail, hasSmtpConfig, verifySmtpTransporter };

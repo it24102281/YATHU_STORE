@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const Admin = require('./models/Admin');
 const { ensureFeaturedDealsSeedData } = require('./utils/seedFeaturedDeals');
+const { hasSmtpConfig, verifySmtpTransporter } = require('./utils/sendEmail');
 require('dotenv').config();
 
 const app = express();
@@ -178,11 +179,34 @@ const ensureDefaultAdmin = async () => {
   console.log(`Default admin created for ${normalizedEmail}`);
 };
 
+const verifySmtpOnStartup = async () => {
+  if (!hasSmtpConfig()) {
+    console.warn('[SMTP] Configuration missing. Email features are disabled until SMTP env variables are set.');
+    return;
+  }
+
+  try {
+    console.log('[SMTP] Verifying transport', {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE || (Number(process.env.SMTP_PORT) === 465 ? 'true' : 'false'),
+      family: 4,
+      user: process.env.SMTP_USER,
+      from: process.env.EMAIL_FROM,
+    });
+    await verifySmtpTransporter();
+    console.log('[SMTP] Transport verified successfully.');
+  } catch (error) {
+    console.error('[SMTP] Transport verification failed:', error.message);
+  }
+};
+
 mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yathu-pubg-store')
   .then(async () => {
     await ensureDefaultAdmin();
     await ensureFeaturedDealsSeedData();
+    await verifySmtpOnStartup();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

@@ -31,7 +31,7 @@ const getSignupErrorResponse = (error) => {
     };
   }
 
-  if (String(error?.message || '').toLowerCase().includes('smtp')) {
+  if (error?.code === 'SMTP_CONNECTION_FAILED' || String(error?.message || '').toLowerCase().includes('smtp')) {
     return {
       status: 500,
       message: 'Verification email could not be sent right now. Please try again in a moment.',
@@ -47,10 +47,10 @@ const getSignupErrorResponse = (error) => {
 const getEmailDeliveryErrorResponse = (error, fallbackMessage) => {
   const normalizedMessage = String(error?.message || '').trim();
 
-  if (normalizedMessage.toLowerCase().includes('smtp')) {
+  if (error?.code === 'SMTP_CONNECTION_FAILED' || normalizedMessage.toLowerCase().includes('smtp')) {
     return {
       status: 500,
-      message: normalizedMessage,
+      message: fallbackMessage,
     };
   }
 
@@ -217,7 +217,6 @@ router.post('/signup', async (req, res) => {
     return res.status(signupError.status).json({
       success: false,
       message: signupError.message,
-      error: error.message,
     });
   }
 });
@@ -299,10 +298,11 @@ router.post('/resend-signup-code', async (req, res) => {
       message: 'Verification code resent successfully',
     });
   } catch (error) {
-    return res.status(500).json({
+    const deliveryError = getEmailDeliveryErrorResponse(error, 'Failed to resend verification code');
+
+    return res.status(deliveryError.status).json({
       success: false,
-      message: 'Failed to resend verification code',
-      error: error.message,
+      message: deliveryError.message,
     });
   }
 });
@@ -510,7 +510,6 @@ router.post('/forgot-password', async (req, res) => {
     return res.status(deliveryError.status).json({
       success: false,
       message: deliveryError.message,
-      error: error.message,
     });
   }
 });
