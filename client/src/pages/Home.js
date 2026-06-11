@@ -437,9 +437,10 @@ const Home = () => {
     (async () => {
       try {
         const res = await api.get('/accounts/featured');
-        setFeaturedAccounts(res.data.data);
+        setFeaturedAccounts(Array.isArray(res.data?.data) ? res.data.data : []);
       } catch (e) {
         console.error(e);
+        setFeaturedAccounts([]);
       } finally {
         setLoading(false);
       }

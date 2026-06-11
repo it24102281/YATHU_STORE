@@ -23,6 +23,9 @@ const categoryIcons = { Standard: Zap, Premium: Star, Elite: Crown, Rare: Shield
 
 const AccountCard = ({ account, index = 0 }) => {
   const [videoOpen, setVideoOpen] = useState(false);
+  const accountFeatures = Array.isArray(account.features) ? account.features : [];
+  const accountSkins = Array.isArray(account.skins) ? account.skins : [];
+  const accountLoginMethods = Array.isArray(account.loginMethods) ? account.loginMethods : [];
 
   const hasVideo = account.videoType && account.videoType !== 'none' && account.videoUrl;
 
@@ -41,9 +44,9 @@ const AccountCard = ({ account, index = 0 }) => {
   );
   const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMessage}`;
 
-  const displayFeatures = account.features?.length
-    ? account.features.slice(0, 3)
-    : account.skins?.slice(0, 3) || [];
+  const displayFeatures = accountFeatures.length
+    ? accountFeatures.slice(0, 3)
+    : accountSkins.slice(0, 3);
 
   return (
     <>
@@ -153,15 +156,15 @@ const AccountCard = ({ account, index = 0 }) => {
             </ul>
           )}
 
-          {account.loginMethods?.length > 0 && (
+          {accountLoginMethods.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {ALL_LOGIN_METHODS.every(m => account.loginMethods.includes(m)) ? (
+              {ALL_LOGIN_METHODS.every((m) => accountLoginMethods.includes(m)) ? (
                 <span className="px-2.5 py-1 rounded-lg text-xs font-semibold"
                   style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: '#c084fc' }}>
                   ✦ ALL Logins
                 </span>
               ) : (
-                account.loginMethods.map((m, i) => (
+                accountLoginMethods.map((m, i) => (
                   <span key={i} className="px-2 py-0.5 rounded-md text-xs font-semibold"
                     style={m === 'All Logins Cleared'
                       ? { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }

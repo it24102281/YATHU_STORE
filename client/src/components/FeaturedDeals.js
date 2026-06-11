@@ -43,8 +43,9 @@ const FeaturedDeals = ({
       setLoading(true);
       setError('');
       const res = await api.get('/featured-deals');
-      setDeals(res.data?.data || []);
+      setDeals(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch (err) {
+      setDeals([]);
       setError(err.response?.data?.message || 'Unable to load featured deals right now.');
     } finally {
       setLoading(false);
