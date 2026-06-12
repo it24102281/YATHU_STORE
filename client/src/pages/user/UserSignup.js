@@ -49,6 +49,12 @@ const UserSignup = () => {
     try {
       setSubmitting(true);
       const response = await userSignup(form);
+      if (response?.data?.emailDelivery === false) {
+        toast.success(response.message || 'Account created successfully. You can sign in now.');
+        navigate('/user/login');
+        return;
+      }
+
       setVerificationPending(true);
       toast.success(response.message || 'Verification code sent to your email');
     } catch (errorResponse) {

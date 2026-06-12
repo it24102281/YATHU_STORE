@@ -9,6 +9,7 @@ const { hasSmtpConfig, verifySmtpTransporter } = require('./utils/sendEmail');
 require('dotenv').config();
 
 const app = express();
+app.set('trust proxy', 1);
 
 console.log('[Server Boot] dotenv loaded', {
   hasMongoUri: Boolean(process.env.MONGODB_URI),
