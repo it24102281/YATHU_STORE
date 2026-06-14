@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -50,7 +50,7 @@ import RequireUserAuth from './components/RequireUserAuth';
 function App() {
   return (
     <AuthProvider>
-      <Router future={{ v7_relativeSplatPath: true }}>
+      <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
         <ScrollToTop />
         <div className="min-h-screen bg-black text-white">
           <AnimatePresence mode="wait">
@@ -82,7 +82,7 @@ function App() {
 
               {/* Admin Routes */}
               <Route element={<AdminLayout />}>
-                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/inventory" element={<AdminInventory />} />
                 <Route path="/admin/users" element={<AdminUsers />} />

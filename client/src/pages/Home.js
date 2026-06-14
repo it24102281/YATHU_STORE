@@ -16,6 +16,10 @@ import {
   Headphones,
   BadgeCheck,
   Package,
+  Instagram,
+  Music2,
+  Clapperboard,
+  Coins,
 } from 'lucide-react';
 import AccountCard from '../components/AccountCard';
 import FeaturedDeals from '../components/FeaturedDeals';
@@ -276,26 +280,26 @@ const HolographicControllerVisual = () => (
     style={{ perspective: 1400 }}
   >
     <div
-      className="absolute z-0 h-[320px] w-[420px] rounded-full blur-3xl sm:h-[420px] sm:w-[580px]"
-      style={{ background: 'radial-gradient(circle, rgba(96,165,250,0.14) 0%, rgba(168,85,247,0.32) 34%, rgba(88,28,135,0.1) 58%, transparent 76%)' }}
+      className="absolute z-0 h-[340px] w-[460px] rounded-full blur-3xl sm:h-[460px] sm:w-[640px]"
+      style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.34) 0%, rgba(126,34,206,0.2) 34%, rgba(96,165,250,0.07) 58%, transparent 76%)' }}
     />
     <div
-      className="absolute z-0 h-[480px] w-[480px] rounded-full opacity-70 blur-[110px] sm:h-[620px] sm:w-[620px]"
-      style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.16) 0%, transparent 68%)' }}
+      className="absolute z-0 h-[520px] w-[520px] rounded-full opacity-40 blur-[120px] sm:h-[680px] sm:w-[680px]"
+      style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.18) 0%, rgba(88,28,135,0.08) 44%, transparent 70%)' }}
     />
 
     {[0, 1, 2].map((ring) => (
       <motion.div
         key={ring}
         animate={{ rotate: ring % 2 === 0 ? 360 : -360 }}
-        transition={{ duration: 28 + ring * 8, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 48 + ring * 12, repeat: Infinity, ease: 'linear' }}
         className="absolute rounded-full border"
         style={{
           width: 340 + ring * 74,
           height: 138 + ring * 34,
-          borderColor: ring === 1 ? 'rgba(96,165,250,0.14)' : 'rgba(192,132,252,0.18)',
+          borderColor: ring === 1 ? 'rgba(96,165,250,0.07)' : 'rgba(192,132,252,0.1)',
           transform: `rotate(${ring * 13 - 12}deg)`,
-          boxShadow: '0 0 28px rgba(168,85,247,0.14)',
+          boxShadow: '0 0 24px rgba(168,85,247,0.08)',
         }}
       />
     ))}
@@ -312,8 +316,8 @@ const HolographicControllerVisual = () => (
     ].map((particle) => (
       <motion.span
         key={`${particle.top}-${particle.left}`}
-        animate={{ y: [0, -18, 0], opacity: [0.28, 0.9, 0.28], scale: [1, 1.5, 1] }}
-        transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: particle.delay }}
+        animate={{ y: [0, -12, 0], opacity: [0.18, 0.48, 0.18], scale: [1, 1.25, 1] }}
+        transition={{ duration: 7.8, repeat: Infinity, ease: 'easeInOut', delay: particle.delay }}
         className="absolute z-20 rounded-full"
         style={{
           top: particle.top,
@@ -321,7 +325,7 @@ const HolographicControllerVisual = () => (
           width: particle.size,
           height: particle.size,
           background: particle.delay > 1 ? '#93c5fd' : '#d8b4fe',
-          boxShadow: '0 0 18px rgba(216,180,254,0.9)',
+          boxShadow: '0 0 14px rgba(216,180,254,0.42)',
         }}
       />
     ))}
@@ -329,8 +333,8 @@ const HolographicControllerVisual = () => (
     {[0, 1, 2].map((streak) => (
       <motion.div
         key={`streak-${streak}`}
-        animate={{ x: [0, 18, 0], opacity: [0.22, 0.54, 0.22] }}
-        transition={{ duration: 5 + streak, repeat: Infinity, ease: 'easeInOut', delay: streak * 0.6 }}
+        animate={{ x: [0, 12, 0], opacity: [0.1, 0.24, 0.1] }}
+        transition={{ duration: 9 + streak * 1.3, repeat: Infinity, ease: 'easeInOut', delay: streak * 0.8 }}
         className="absolute z-10 rounded-full"
         style={{
           top: `${24 + streak * 16}%`,
@@ -338,21 +342,40 @@ const HolographicControllerVisual = () => (
           width: `${240 + streak * 60}px`,
           height: '2px',
           background: streak === 1
-            ? 'linear-gradient(90deg, transparent, rgba(96,165,250,0.65), transparent)'
-            : 'linear-gradient(90deg, transparent, rgba(216,180,254,0.75), transparent)',
+            ? 'linear-gradient(90deg, transparent, rgba(96,165,250,0.36), transparent)'
+            : 'linear-gradient(90deg, transparent, rgba(216,180,254,0.42), transparent)',
           filter: 'blur(0.5px)',
           transform: `rotate(${streak === 1 ? -10 : streak === 2 ? 12 : -4}deg)`,
         }}
       />
     ))}
 
+    {[
+      { label: 'UC', Icon: Coins, top: '19%', left: '19%', delay: 0 },
+      { label: 'Helmet', Icon: Shield, top: '26%', left: '77%', delay: 1.2 },
+      { label: 'TikTok', Icon: Music2, top: '68%', left: '15%', delay: 2.1 },
+      { label: 'Instagram', Icon: Instagram, top: '72%', left: '77%', delay: 0.8 },
+      { label: 'CapCut', Icon: Clapperboard, top: '11%', left: '58%', delay: 1.7 },
+    ].map(({ label, Icon, top, left, delay }) => (
+      <motion.div
+        key={label}
+        aria-label={label}
+        animate={{ y: [0, -10, 0], x: [0, 5, 0], opacity: [0.18, 0.32, 0.18] }}
+        transition={{ duration: 10.5, repeat: Infinity, ease: 'easeInOut', delay }}
+        className="absolute z-10 hidden h-10 w-10 items-center justify-center rounded-2xl border border-purple-200/10 bg-white/[0.035] text-purple-100 shadow-[0_0_22px_rgba(168,85,247,0.10)] backdrop-blur-md sm:flex"
+        style={{ top, left }}
+      >
+        <Icon className="h-4 w-4" strokeWidth={1.8} />
+      </motion.div>
+    ))}
+
     <motion.div
-      animate={{ y: [0, -14, 0], rotate: [-1, 1.4, -1] }}
-      transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
+      animate={{ y: [0, -9, 0], rotate: [-0.6, 0.8, -0.6] }}
+      transition={{ duration: 9.5, repeat: Infinity, ease: 'easeInOut' }}
       className="relative z-10 w-[360px] max-w-full sm:w-[540px] lg:w-[640px]"
       style={{
         transformStyle: 'preserve-3d',
-        filter: 'drop-shadow(0 28px 60px rgba(0,0,0,0.58)) drop-shadow(0 0 24px rgba(168,85,247,0.52))',
+        filter: 'drop-shadow(0 28px 60px rgba(0,0,0,0.58)) drop-shadow(0 0 22px rgba(168,85,247,0.42))',
       }}
     >
       <svg viewBox="0 0 820 430" className="h-auto w-full overflow-visible" role="img" aria-label="Holographic gaming controller">
@@ -599,9 +622,8 @@ const Home = () => {
                 <p className="text-xl font-semibold tracking-[0.02em] text-gray-300 sm:text-2xl" style={{ fontFamily: 'Rajdhani, Poppins, sans-serif' }}>
                   Accounts • UC Packages • Social Media Services
                 </p>
-                <p className="max-w-xl text-lg leading-relaxed text-gray-400 sm:text-xl">
-                  Buy verified gaming accounts, UC packages, premium subscriptions, and social media growth services.
-                  Trusted by thousands of customers with secure payments and instant delivery.
+                <p className="max-w-xl text-base leading-8 text-gray-400 sm:text-lg">
+                  Premium gaming accounts, UC packages & social media growth services delivered instantly with secure payments and trusted support for gamers across Sri Lanka.
                 </p>
               </motion.div>
 

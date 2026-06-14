@@ -42,7 +42,8 @@ const UserProfile = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
 
   useEffect(() => {
     loadCustomer();
@@ -63,19 +64,27 @@ const UserProfile = () => {
   }, [customer]);
 
   useEffect(() => {
+    const shouldLoadOrders = activeTab === 'funds' || activeTab === 'tracker';
+
+    if (!shouldLoadOrders || ordersLoaded || ordersLoading) {
+      return;
+    }
+
     const fetchOrders = async () => {
       try {
+        setOrdersLoading(true);
         const response = await getUserOrders();
         setOrders(response.data || []);
       } catch (error) {
         setOrders([]);
       } finally {
         setOrdersLoading(false);
+        setOrdersLoaded(true);
       }
     };
 
     fetchOrders();
-  }, []);
+  }, [activeTab, getUserOrders, ordersLoaded, ordersLoading]);
 
   const customerInitial = customer?.fullName?.trim()?.charAt(0)?.toUpperCase() || 'U';
   const labelClass = 'ml-1 text-sm font-semibold text-gray-300';
@@ -529,7 +538,7 @@ const UserProfile = () => {
                 </div>
                 <div>
                   <div className="text-sm text-gray-400">Orders</div>
-                  <div className="text-lg font-bold text-white">{orders.length}</div>
+                  <div className="text-lg font-bold text-white">{ordersLoaded ? orders.length : '-'}</div>
                 </div>
               </div>
             </div>

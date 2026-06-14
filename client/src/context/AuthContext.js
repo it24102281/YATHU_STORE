@@ -318,30 +318,6 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: 'SET_USER_LOADING', payload: true });
       const res = await api.post('/auth/user/login', { identifier, password });
       const token = res.data?.data?.token;
-      const role = res.data?.data?.role;
-
-      if (role === 'admin') {
-        const admin = res.data?.data?.admin;
-
-        dispatch({
-          type: 'ADMIN_LOGIN_SUCCESS',
-          payload: { token, admin },
-        });
-
-        console.log('[Frontend Auth] Redirect status', {
-          role: 'admin',
-          redirectTo: res.data?.data?.redirectTo || '/admin/dashboard',
-        });
-
-        return {
-          success: true,
-          role: 'admin',
-          redirectTo: res.data?.data?.redirectTo || '/admin/dashboard',
-          message: res.data?.message || 'Login successful',
-          data: admin,
-        };
-      }
-
       const user = res.data?.data?.user;
 
       dispatch({

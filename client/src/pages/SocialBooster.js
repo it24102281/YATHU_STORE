@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   ShieldCheck,
-  Sparkles,
   Ticket,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -17,7 +16,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import WalletTopUpModal from '../components/WalletTopUpModal';
 
-const platformOptions = ['All', 'TikTok', 'Instagram', 'Facebook', 'YouTube', 'Twitter/X', 'Social Media'];
+const SOCIAL_SERVICES_STORAGE_KEY = 'socialBoosterServicesCache';
 const SELLING_PRICE_OVERRIDES = {
   '187': 250,
   '189': 350,
@@ -26,6 +25,9 @@ const SELLING_PRICE_OVERRIDES = {
   '254': 1300,
   '291': 300,
 };
+let loadedServicesCache = null;
+let loadedServicesPromise = null;
+let fallbackToastShown = false;
 
 const fieldStyles =
   'w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-white outline-none transition focus:border-purple-400/40';
@@ -54,6 +56,7 @@ const getOverriddenSellingPrice = (service) => {
 };
 
 const normalizeService = (service) => {
+  const serviceId = String(service?.serviceId || service?.cid_service_id || service?.service || '').trim();
   const overriddenSellingPrice = getOverriddenSellingPrice(service);
   const computedSellingPrice = overriddenSellingPrice ?? Number(
         service?.sellingPrice ??
@@ -69,6 +72,8 @@ const normalizeService = (service) => {
 
   return {
     ...service,
+    serviceId,
+    cid_service_id: serviceId,
     price_lkr: sellingPrice,
     sellingPrice,
   };
@@ -89,6 +94,62 @@ const parseServiceIdQuery = (value) => {
   return idMatch ? idMatch[1] : '';
 };
 
+const readCachedServices = () => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SOCIAL_SERVICES_STORAGE_KEY);
+    const parsed = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? parsed.map(normalizeService) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const loadBundledFallbackServices = async () => {
+  if (loadedServicesCache) {
+    return loadedServicesCache;
+  }
+
+  try {
+    if (!loadedServicesPromise) {
+      loadedServicesPromise = fetch(`/reseller-services-fallback.json?ts=${Date.now()}`)
+        .then(async (response) => {
+          if (!response.ok) {
+            return [];
+          }
+
+          const payload = await response.json();
+          const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+          return items.map(normalizeService);
+        })
+        .catch(() => [])
+        .finally(() => {
+          loadedServicesPromise = null;
+        });
+    }
+
+    loadedServicesCache = await loadedServicesPromise;
+    return loadedServicesCache;
+  } catch (error) {
+    return [];
+  }
+};
+
+const writeCachedServices = (items) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(SOCIAL_SERVICES_STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    // Ignore storage write failures so service browsing still works.
+  }
+};
+
 const SocialBooster = () => {
   const { api, customer, loadCustomer, isUserAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -98,7 +159,6 @@ const SocialBooster = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
-  const [platform, setPlatform] = useState('All');
   const [category, setCategory] = useState('');
   const [serviceId, setServiceId] = useState('');
   const [link, setLink] = useState('');
@@ -106,20 +166,53 @@ const SocialBooster = () => {
   const [couponCode, setCouponCode] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isWalletTopUpOpen, setIsWalletTopUpOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isDepositHovered, setIsDepositHovered] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
         setLoading(true);
         setError('');
-        localStorage.removeItem('socialBoosterServices');
-        localStorage.removeItem('socialBoosterPackages');
+        if (loadedServicesCache?.length) {
+          setServices(loadedServicesCache);
+          return;
+        }
+
         const response = await api.get(`/social/services?ts=${Date.now()}`);
         const data = Array.isArray(response.data?.data)
           ? response.data.data.map(normalizeService)
           : [];
         setServices(data);
+        loadedServicesCache = data;
+        writeCachedServices(data);
       } catch (requestError) {
+        const cachedServices = readCachedServices();
+
+        if (cachedServices.length) {
+          setServices(cachedServices);
+          loadedServicesCache = cachedServices;
+          setError('');
+          if (!fallbackToastShown) {
+            fallbackToastShown = true;
+            toast.warn('Showing the last synced social booster services because the live CID sync is unavailable right now.');
+          }
+          return;
+        }
+
+        const bundledFallbackServices = await loadBundledFallbackServices();
+        if (bundledFallbackServices.length) {
+          setServices(bundledFallbackServices);
+          loadedServicesCache = bundledFallbackServices;
+          setError('');
+          writeCachedServices(bundledFallbackServices);
+          if (!fallbackToastShown) {
+            fallbackToastShown = true;
+            toast.warn('Showing the bundled social booster services because the live CID sync is unavailable right now.');
+          }
+          return;
+        }
+
         setError(requestError.response?.data?.message || 'Failed to load premium social media services');
       } finally {
         setLoading(false);
@@ -131,21 +224,21 @@ const SocialBooster = () => {
 
   const searchedServices = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const serviceIdQuery = parseServiceIdQuery(query);
 
     return services.filter((service) => {
-      const platformMatch = platform === 'All' || service.platform === platform;
-      const serviceIdMatch = String(service.cid_service_id || service.serviceId || '').toLowerCase();
-
-      if (serviceIdQuery) {
-        return platformMatch && serviceIdMatch === serviceIdQuery;
+      if (!normalizedQuery) {
+        return true;
       }
 
-      const text = `${service.cid_service_id} ${service.platform} ${service.category} ${service.name} ${service.description}`.toLowerCase();
-      const queryMatch = text.includes(normalizedQuery);
-      return platformMatch && queryMatch;
+      const serviceId = String(service.cid_service_id || service.serviceId || '').toLowerCase();
+      const searchableText = `${serviceId} ${service.platform} ${service.category} ${service.name} ${service.description}`.toLowerCase();
+      const queryMatch =
+        searchableText.includes(normalizedQuery) ||
+        serviceId.includes(normalizedQuery.replace(/\s+/g, ''));
+
+      return queryMatch;
     });
-  }, [services, platform, query]);
+  }, [services, query]);
 
   const categories = useMemo(() => {
     return Array.from(new Set(searchedServices.map((service) => service.category).filter(Boolean)));
@@ -166,6 +259,16 @@ const SocialBooster = () => {
     return searchedServices.filter((service) => !category || service.category === category);
   }, [searchedServices, category]);
 
+  const searchSuggestions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    return searchedServices.slice(0, 8);
+  }, [query, searchedServices]);
+
   useEffect(() => {
     if (!packageOptions.length) {
       setServiceId('');
@@ -181,6 +284,13 @@ const SocialBooster = () => {
   const selectedService = useMemo(() => {
     return packageOptions.find((service) => service.serviceId === serviceId) || null;
   }, [packageOptions, serviceId]);
+
+  const handleSuggestionSelect = (service) => {
+    setQuery(service.cid_service_id ? `${service.cid_service_id} ${service.name}` : service.name);
+    setCategory(service.category || '');
+    setServiceId(service.serviceId || service.cid_service_id || '');
+    setIsSearchFocused(false);
+  };
 
   const handleQuantityChange = (event) => {
     const nextValue = event.target.value.replace(/[^\d]/g, '');
@@ -329,13 +439,6 @@ const SocialBooster = () => {
             transition={{ duration: 0.45 }}
             className="text-center"
           >
-            <div
-              className="mb-6 inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
-              style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.22)', color: '#c4b5fd' }}
-            >
-              <Sparkles className="h-4 w-4" />
-              YathuOfficial Services
-            </div>
             <h1
               className="text-5xl font-black md:text-7xl"
               style={{
@@ -369,36 +472,52 @@ const SocialBooster = () => {
           <div className="mt-14 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[32px] border border-white/10 bg-[#0d0d13] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.38)] sm:p-8">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.28em] text-purple-300">Service Browser</div>
-                  <h2 className="mt-2 text-3xl font-black text-white">Premium Social Media Services</h2>
-                </div>
+                  <div>
+                    <h2 className="mt-2 text-3xl font-black text-white">Premium Social Media Services</h2>
+                  </div>
                 <div className="relative w-full lg:max-w-sm">
                   <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => {
+                      window.setTimeout(() => setIsSearchFocused(false), 150);
+                    }}
                     placeholder="Search TikTok, Instagram, Facebook..."
                     className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-4 pl-12 pr-4 text-white outline-none transition focus:border-purple-400/40"
                   />
+                  {isSearchFocused && searchSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-30 overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c12] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+                      <div className="max-h-[320px] overflow-y-auto">
+                        {searchSuggestions.map((service) => (
+                          <button
+                            key={`${service.serviceId}-${service.cid_service_id}`}
+                            type="button"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => handleSuggestionSelect(service)}
+                            className="flex w-full items-start gap-3 border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/[0.04]"
+                          >
+                          <div className="mt-0.5 rounded-full border border-purple-400/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-purple-200">
+                            ID:{service.cid_service_id || service.serviceId}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="line-clamp-2 break-words text-sm font-semibold text-white">
+                              {service.name}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-400">
+                              {service.category} {service.platform ? `• ${service.platform}` : ''}
+                            </div>
+                            <div className="mt-2 text-sm font-bold text-emerald-300">
+                              {formatLkr(service.sellingPrice || service.price_lkr)} per 1000
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                {platformOptions.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setPlatform(item)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      platform === item
-                        ? 'bg-purple-500 text-white'
-                        : 'border border-white/10 bg-white/[0.04] text-gray-300 hover:border-purple-400/30 hover:text-white'
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
               </div>
 
               {loading ? (
@@ -504,17 +623,26 @@ const SocialBooster = () => {
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="w-full lg:w-[320px]">
-                    <p className="mb-3 text-center text-[1.1rem] font-medium text-white/88">
+                  <div className="w-full lg:w-[300px]">
+                    <p className="mb-4 text-center text-sm font-semibold text-gray-300">
                       Looking to Deposit?
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setIsWalletTopUpOpen(true)}
-                      className="flex h-[74px] w-full items-center justify-center rounded-[26px] border border-emerald-400/30 bg-gradient-to-r from-[#166534] via-[#1f8a4c] to-[#34a853] px-8 text-[1.3rem] font-black uppercase tracking-[0.18em] text-white shadow-[0_20px_44px_rgba(22,101,52,0.28)] transition hover:from-[#15803d] hover:via-[#249c57] hover:to-[#3cb75d]"
+                    <div
+                      className={`deposit-button-shell ${isDepositHovered ? 'active' : ''}`}
+                      onMouseEnter={() => setIsDepositHovered(true)}
+                      onMouseLeave={() => setIsDepositHovered(false)}
+                      onFocusCapture={() => setIsDepositHovered(true)}
+                      onBlurCapture={() => setIsDepositHovered(false)}
                     >
-                      Deposit Now
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsWalletTopUpOpen(true)}
+                        className="deposit-button flex h-[78px] w-full items-center justify-center rounded-[28px] border border-fuchsia-400/25 bg-gradient-to-r from-[#6d28d9] via-[#8b5cf6] to-[#d946ef] px-8 text-[1.15rem] font-black uppercase tracking-[0.18em] text-white shadow-[0_20px_44px_rgba(124,58,237,0.34)] transition hover:from-[#7c3aed] hover:via-[#a855f7] hover:to-[#f472b6]"
+                      >
+                        <span className="deposit-wave" aria-hidden="true" />
+                        <span className="relative z-10">Deposit Now</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (

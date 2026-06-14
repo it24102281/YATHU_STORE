@@ -110,8 +110,15 @@ const AdminUsers = () => {
         { headers: getAuthHeaders() }
       );
 
-      setUsers((prev) => prev.map((user) => (user.id === editingUser.id ? res.data.data : user)));
-      setEditingUser((prev) => (prev ? res.data.data : prev));
+      const updatedUser = res.data?.data;
+
+      if (updatedUser) {
+        setUsers((prev) => prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+        setEditingUser(updatedUser);
+        setSelectedUser((prev) => (prev?.id === updatedUser.id ? updatedUser : prev));
+      }
+
+      await fetchUsers(search);
       setWalletTopUp('');
       toast.success(res.data?.message || 'Wallet funded successfully');
     } catch (error) {

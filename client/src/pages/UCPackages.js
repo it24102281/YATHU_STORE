@@ -505,17 +505,6 @@ const UCPackages = () => {
           transition={{ duration: 0.45 }}
           className="mb-14 text-center"
         >
-          <div
-            className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em]"
-            style={{
-              background: 'rgba(139,92,246,0.12)',
-              border: '1px solid rgba(168,85,247,0.28)',
-              color: '#d8b4fe',
-            }}
-          >
-            <Package className="h-3.5 w-3.5" />
-            UC Packages
-          </div>
           <h1 className="text-4xl font-black text-white sm:text-5xl lg:text-6xl">
             Premium <span className="gradient-text">UC Marketplace</span>
           </h1>

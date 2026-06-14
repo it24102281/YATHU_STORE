@@ -1,15 +1,14 @@
 const crypto = require('crypto');
 const express = require('express');
 const validator = require('validator');
-const Admin = require('../models/Admin');
 const User = require('../models/User');
-const { generateToken, generateUserToken, userMiddleware } = require('../middleware/auth');
+const { generateUserToken, userMiddleware } = require('../middleware/auth');
 const { sendEmail, hasSmtpConfig } = require('../utils/sendEmail');
 
 const router = express.Router();
 
 const whatsappRegex = /^[0-9+\-\s()]{8,20}$/;
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const strongPasswordRegex = /^.{8,}$/;
 const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
 const isSmtpDeliveryError = (error) =>
   error?.code === 'SMTP_CONNECTION_FAILED' || String(error?.message || '').toLowerCase().includes('smtp');
@@ -75,42 +74,8 @@ const getSafeUser = (user) => ({
   updatedAt: user.updatedAt,
 });
 
-const getSafeAdmin = (admin) => ({
-  id: admin._id,
-  name: admin.name,
-  email: admin.email,
-  role: admin.role || 'admin',
-  lastLogin: admin.lastLogin,
-});
-
 const normalizeEmail = (value = '') => value.trim().toLowerCase();
 const normalizeIdentifier = (value = '') => value.trim();
-
-const ensureEnvAdminRecord = async () => {
-  const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL);
-  const adminPassword = process.env.ADMIN_PASSWORD || '';
-
-  if (!adminEmail || !adminPassword) {
-    return null;
-  }
-
-  let admin = await Admin.findOne({ email: adminEmail });
-
-  if (!admin) {
-    admin = await Admin.create({
-      name: 'Admin',
-      email: adminEmail,
-      password: adminPassword,
-      role: 'admin',
-      isActive: true,
-    });
-  } else if (!admin.isActive) {
-    admin.isActive = true;
-    await admin.save();
-  }
-
-  return admin;
-};
 
 const sendSignupVerificationEmail = async (user, code) => {
   await sendEmail({
@@ -159,7 +124,7 @@ router.post('/signup', async (req, res) => {
     if (!strongPasswordRegex.test(password || '')) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number',
+        message: 'Password must be at least 8 characters',
       });
     }
 
@@ -334,7 +299,7 @@ router.post('/login', async (req, res) => {
   try {
     const { identifier, password } = req.body;
 
-    console.log('[Auth Login] Admin login attempt via shared login route');
+    console.log('[Auth Login] Customer login attempt via shared login route');
 
     if (!identifier?.trim() || !password) {
       console.log('[Auth Login] Missing identifier or password');
@@ -348,54 +313,10 @@ router.post('/login', async (req, res) => {
     const normalizedEmail = validator.isEmail(normalizedIdentifier)
       ? normalizeEmail(normalizedIdentifier)
       : '';
-    const envAdminEmail = normalizeEmail(process.env.ADMIN_EMAIL);
-    const envAdminPassword = process.env.ADMIN_PASSWORD || '';
-
     console.log('[Auth Login] Email received', {
       identifier: normalizedIdentifier,
       normalizedEmail: normalizedEmail || null,
     });
-
-    if (
-      normalizedEmail &&
-      envAdminEmail &&
-      normalizedEmail === envAdminEmail &&
-      password === envAdminPassword
-    ) {
-      console.log('[Auth Login] Admin match success');
-      const admin = await ensureEnvAdminRecord();
-
-      if (!admin) {
-        console.log('[Auth Login] Admin env configured incorrectly');
-        return res.status(500).json({
-          success: false,
-          message: 'Admin account is not configured correctly',
-        });
-      }
-
-      await admin.updateLastLogin();
-      const token = generateToken(admin);
-
-      console.log('[Auth Login] JWT generation status', {
-        success: Boolean(token),
-        role: 'admin',
-        adminId: String(admin._id),
-        email: admin.email,
-      });
-
-      return res.json({
-        success: true,
-        message: 'Login successful',
-        data: {
-          token,
-          role: 'admin',
-          redirectTo: '/admin/dashboard',
-          admin: getSafeAdmin(admin),
-        },
-      });
-    }
-
-    console.log('[Auth Login] Admin match failure, continuing to normal user lookup');
 
     const query = validator.isEmail(normalizedIdentifier)
       ? { email: normalizedEmail }
@@ -413,6 +334,13 @@ router.post('/login', async (req, res) => {
         success: false,
         message: 'Your account has been blocked. Please contact admin.',
       });
+    }
+
+    if (user.role === 'admin') {
+      console.log('[Auth Login] Rejected admin-role account on customer login route', {
+        email: user.email,
+      });
+      return res.status(401).json({ success: false, message: INVALID_LOGIN_MESSAGE });
     }
 
     const isPasswordValid = await user.comparePassword(password);
@@ -567,7 +495,7 @@ router.post('/reset-password', async (req, res) => {
     if (!strongPasswordRegex.test(password || '')) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number',
+        message: 'Password must be at least 8 characters',
       });
     }
 

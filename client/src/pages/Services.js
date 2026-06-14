@@ -9,6 +9,7 @@ const Services = () => {
         heading="Browse All Featured Deals"
         subtitle="Every card on this page is loaded from your backend database, so admin updates appear automatically."
         showSearch
+        showEyebrow={false}
       />
     </div>
   );

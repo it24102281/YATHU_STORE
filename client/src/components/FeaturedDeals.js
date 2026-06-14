@@ -26,6 +26,7 @@ const FeaturedDeals = ({
   compact = false,
   showFilters = true,
   showSearch = false,
+  showEyebrow = true,
   maxItems,
   latestFirst = false,
 }) => {
@@ -113,7 +114,7 @@ const FeaturedDeals = ({
   };
 
   return (
-    <section className={compact ? 'py-16' : 'py-24'} style={{ background: 'linear-gradient(180deg, #0f0a1e 0%, #0a0a0a 100%)' }}>
+    <section className={compact ? 'pt-28 pb-16 md:pt-32' : 'py-24'} style={{ background: 'linear-gradient(180deg, #0f0a1e 0%, #0a0a0a 100%)' }}>
       <style>{`
         .featured-deal-card {
           --spotlight-x: 50%;
@@ -330,13 +331,15 @@ const FeaturedDeals = ({
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {showHeader && (
           <div className="text-center mb-12">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-semibold uppercase tracking-widest"
-              style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)', color: '#c084fc' }}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Fresh Inventory
-            </div>
+            {showEyebrow && (
+              <div
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-semibold uppercase tracking-widest"
+                style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)', color: '#c084fc' }}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Fresh Inventory
+              </div>
+            )}
             <h2
               className="text-4xl md:text-5xl font-black mb-4"
               style={{

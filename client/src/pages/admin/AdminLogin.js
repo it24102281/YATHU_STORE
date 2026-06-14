@@ -42,8 +42,14 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -168,13 +174,13 @@ const AdminLogin = () => {
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-purple-300/80">
-                          Admin Access
+                          Secure Dashboard Access
                         </p>
                         <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">
-                          Welcome Back
+                          YATHU ADMIN
                         </h1>
                         <p className="mt-2 max-w-sm text-sm leading-7 text-gray-400">
-                          Sign in to manage your gaming marketplace, update products, and control storefront visibility.
+                          Secure Dashboard Access
                         </p>
                       </div>
                     </div>
@@ -253,7 +259,7 @@ const AdminLogin = () => {
                       <div className="h-6 w-6 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
                     ) : (
                       <>
-                        <span>Sign In to Dashboard</span>
+                        <span>Login</span>
                         <LogIn className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                       </>
                     )}

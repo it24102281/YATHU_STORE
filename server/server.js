@@ -94,16 +94,44 @@ app.options('*', cors(corsOptions));
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: isDevelopment ? 1000 : 100,
+const authRoutePrefixes = [
+  '/api/auth/user/login',
+  '/api/admin/login',
+  '/api/auth/user/signup',
+  '/api/auth/user/verify-signup',
+  '/api/auth/user/resend-signup-code',
+  '/api/auth/user/forgot-password',
+  '/api/auth/user/reset-password',
+];
+
+const isAuthRoute = (requestPath = '') =>
+  authRoutePrefixes.some((prefix) => requestPath.startsWith(prefix));
+
+const authLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: isDevelopment ? 300 : 40,
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many login attempts. Please wait a moment and try again.',
+  },
+});
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDevelopment ? 2000 : 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isAuthRoute(req.path),
   message: {
     success: false,
     message: 'Too many requests. Please wait a moment and try again.',
   },
 });
+app.use('/api/auth/user/login', authLimiter);
+app.use('/api/admin/login', authLimiter);
 app.use(limiter);
 
 app.use(express.json({ limit: '10mb' }));
@@ -152,6 +180,18 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
+const primaryMongoUri = process.env.MONGODB_URI || '';
+const fallbackMongoUri = process.env.MONGODB_URI_LOCAL || 'mongodb://127.0.0.1:27017/yathu-pubg-store';
+const mongoUrisToTry = Array.from(
+  new Set(
+    (process.env.NODE_ENV === 'production'
+      ? [primaryMongoUri, fallbackMongoUri]
+      : [fallbackMongoUri, primaryMongoUri]
+    )
+      .map((uri) => String(uri || '').trim())
+      .filter(Boolean)
+  )
+);
 
 const ensureDefaultAdmin = async () => {
   const email = process.env.ADMIN_EMAIL || 'yathupubg@gmail.com';
@@ -207,8 +247,31 @@ const verifySmtpOnStartup = async () => {
   }
 };
 
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yathu-pubg-store')
+const connectDatabase = async () => {
+  for (const mongoUri of mongoUrisToTry) {
+    try {
+      await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 5000,
+      });
+
+      console.log('[Mongo] Connected successfully', {
+        source: mongoUri === primaryMongoUri ? 'MONGODB_URI' : 'MONGODB_URI_LOCAL',
+      });
+      return;
+    } catch (error) {
+      console.warn('[Mongo] Connection attempt failed', {
+        source: mongoUri === primaryMongoUri ? 'MONGODB_URI' : 'MONGODB_URI_LOCAL',
+        message: error.message,
+      });
+    }
+  }
+
+  throw new Error(
+    'Unable to connect to MongoDB. Set MONGODB_URI to an accessible Atlas cluster or MONGODB_URI_LOCAL to a running local MongoDB instance.'
+  );
+};
+
+connectDatabase()
   .then(async () => {
     await ensureDefaultAdmin();
     await ensureFeaturedDealsSeedData();

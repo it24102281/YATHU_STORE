@@ -33,7 +33,7 @@ const resolveActorFromToken = async (token) => {
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
   if (decoded.type === 'user') {
-    const user = await User.findById(decoded.id).select('+password');
+    const user = await User.findById(decoded.id);
 
     if (!user) {
       throw new Error('User not found');
@@ -46,7 +46,7 @@ const resolveActorFromToken = async (token) => {
     };
   }
 
-  const admin = await Admin.findById(decoded.id).select('+password');
+  const admin = await Admin.findById(decoded.id);
 
   if (!admin) {
     throw new Error('Admin not found');

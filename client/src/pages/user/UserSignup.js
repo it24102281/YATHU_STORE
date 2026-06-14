@@ -5,7 +5,7 @@ import { User, Mail, Phone, Lock, Eye, EyeOff, ChevronLeft, UserPlus, ShieldChec
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const strongPasswordRegex = /^.{8,}$/;
 const whatsappRegex = /^[0-9+\-\s()]{8,20}$/;
 
 const UserSignup = () => {
@@ -163,7 +163,7 @@ const UserSignup = () => {
             </div>
 
             <div className="sm:col-span-2 rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-sm leading-7 text-gray-400">
-              Password must be at least 8 characters and include uppercase, lowercase, and a number.
+              Password must be at least 8 characters.
             </div>
 
             <div className="sm:col-span-2">

@@ -6,6 +6,7 @@ import {
   X,
   User,
   LogOut,
+  LayoutDashboard,
   Wallet,
   Activity,
   FileText,
@@ -36,6 +37,7 @@ const Navbar = () => {
   }, [location.pathname]);
 
   const isActive = (path) => location.pathname === path;
+  const isPageTop = !isScrolled;
   const customerInitial = customer?.fullName?.trim()?.charAt(0)?.toUpperCase() || 'U';
   const formattedCustomerFunds = `LKR ${Number(customer?.walletBalance || 0).toLocaleString()}`;
 
@@ -69,24 +71,23 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? 'py-2 shadow-2xl shadow-black/50'
+          ? 'py-2'
           : 'py-3'
       }`}
       style={{
-        background: isScrolled
-          ? 'rgba(10,10,10,0.95)'
-          : 'rgba(10,10,10,0.7)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(139,92,246,0.12)',
+        background: 'transparent',
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        borderBottom: 'none',
+        boxShadow: 'none',
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-            <div className="hidden sm:block">
+          <Link to="/" className="flex items-center gap-3 group flex-shrink-0 rounded-2xl px-2 py-1 transition-all duration-300 hover:bg-purple-500/10 hover:shadow-[0_0_22px_rgba(168,85,247,0.18)]">
+            <div className="hidden sm:flex flex-col items-center text-center">
               <span
                 className="font-black text-lg leading-none tracking-tight"
                 style={{
@@ -97,21 +98,21 @@ const Navbar = () => {
                   backgroundClip: 'text',
                 }}
               >
-                Yathu Official
+                Yathu PUBG Store
               </span>
-              <div className="text-[10px] text-gray-500 font-medium tracking-widest uppercase">
+              <div className="w-full text-center text-[10px] text-gray-500 font-medium tracking-widest uppercase">
                 Gaming Marketplace
               </div>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex flex-1 items-center justify-center gap-2 px-6">
+          <div className="hidden lg:flex flex-1 items-center justify-center gap-1 px-4">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`relative px-4 py-2 text-[15px] font-semibold whitespace-nowrap transition-all duration-300 rounded-xl ${
+                className={`relative px-3.5 py-2 text-[15px] font-semibold whitespace-nowrap transition-all duration-300 rounded-xl hover:bg-purple-500/10 hover:shadow-[0_0_18px_rgba(168,85,247,0.22)] ${
                   isActive(link.path)
                     ? 'text-white'
                     : 'text-gray-400 hover:text-white'
@@ -201,18 +202,27 @@ const Navbar = () => {
                 </AnimatePresence>
               </div>
             ) : isAuthenticated ? (
-              <button
-                onClick={handleAdminLogout}
-                className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-300 transition-all duration-300 hover:text-white"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/25 bg-purple-500/10 px-5 py-3 text-sm font-semibold text-purple-200 transition-all duration-300 hover:text-white hover:shadow-[0_0_18px_rgba(168,85,247,0.22)]"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </button>
+                <button
+                  onClick={handleAdminLogout}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-300 transition-all duration-300 hover:text-white hover:shadow-[0_0_18px_rgba(248,113,113,0.18)]"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => navigate('/user/login')}
-                className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-300"
-                style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', border: '1px solid rgba(139,92,246,0.4)' }}
+                className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(168,85,247,0.34)]"
+                style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)', border: '1px solid rgba(139,92,246,0.4)', boxShadow: '0 12px 28px rgba(139,92,246,0.18)' }}
               >
                 <User className="w-4 h-4" />
                 <span>Sign In</span>
@@ -268,6 +278,15 @@ const Navbar = () => {
                           <div className="text-xs text-gray-500">Administrator</div>
                         </div>
                       </div>
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          navigate('/admin/dashboard');
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-purple-300 hover:bg-purple-500/10 rounded-xl transition-all duration-200"
+                      >
+                        Dashboard
+                      </button>
                       <button onClick={handleAdminLogout}
                         className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
                         Logout

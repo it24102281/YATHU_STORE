@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Navigate, NavLink } from 'react-router-dom';
+import { Outlet, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu,
@@ -17,9 +17,10 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 const AdminLayout = () => {
-  const { isAuthenticated, loading, user, logout } = useAuth();
+  const { admin, adminLoading, isAuthenticated, isUserAuthenticated, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const location = useLocation();
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -33,16 +34,22 @@ const AdminLayout = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (loading) {
+  if (adminLoading) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
   }
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/admin/login" replace />;
+  if (!isAuthenticated || !admin) {
+    return (
+      <Navigate
+        to={isUserAuthenticated ? '/user/login' : '/admin/login'}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { name: 'Users', icon: UsersIcon, path: '/admin/users' },
     { name: 'Inventory', icon: Box, path: '/admin/inventory' },
     { name: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
@@ -107,7 +114,7 @@ const AdminLayout = () => {
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-purple-500/20 bg-gradient-to-t from-gray-950 to-transparent">
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 mb-4">
                 <p className="text-xs text-gray-400 mb-1">Logged in as</p>
-                <p className="text-sm font-bold text-purple-300">{user?.name || 'Admin'}</p>
+                <p className="text-sm font-bold text-purple-300">{admin?.name || 'Admin'}</p>
               </div>
               <button
                 onClick={handleLogout}

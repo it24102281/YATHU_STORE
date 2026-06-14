@@ -4,39 +4,54 @@ const path = require('path');
 const buildConfig = () => ({
   baseUrl: (process.env.CID_API_URL || process.env.SMM_API_URL || process.env.RESELLER_API_BASE_URL || '').trim(),
   apiKey: (process.env.CID_API_KEY || process.env.SMM_API_KEY || process.env.RESELLER_API_KEY || '').trim(),
+  apiKeyField: (process.env.CID_API_KEY_FIELD || process.env.RESELLER_API_KEY_FIELD || 'key').trim(),
   mode: (process.env.RESELLER_API_MODE || 'smm_panel').trim(),
 });
 
 const servicesCacheTtlMs = Number(process.env.RESELLER_SERVICES_CACHE_TTL_MS || 10 * 60 * 1000);
 const servicesCacheFile = path.join(__dirname, '..', '.cache', 'reseller-services.json');
+const bundledServicesFallbackFile = path.join(__dirname, '..', 'data', 'reseller-services-fallback.json');
 let servicesCache = {
   data: null,
   expiresAt: 0,
   fetchedAt: 0,
 };
 
-const loadServicesCacheFromDisk = () => {
+const readServicesFromDisk = (filePath) => {
   try {
-    if (!fs.existsSync(servicesCacheFile)) {
-      return;
+    if (!fs.existsSync(filePath)) {
+      return null;
     }
 
-    const raw = fs.readFileSync(servicesCacheFile, 'utf8');
+    const raw = fs.readFileSync(filePath, 'utf8');
     const parsed = JSON.parse(raw);
+    const data = Array.isArray(parsed?.data) ? parsed.data : Array.isArray(parsed) ? parsed : null;
 
-    if (!Array.isArray(parsed?.data) || !parsed.data.length) {
-      return;
+    if (!Array.isArray(data) || !data.length) {
+      return null;
     }
 
-    const fetchedAt = Number(parsed.fetchedAt || Date.now());
-    servicesCache = {
-      data: parsed.data,
-      fetchedAt,
-      expiresAt: fetchedAt + servicesCacheTtlMs,
+    return {
+      data,
+      fetchedAt: Number(parsed?.fetchedAt || Date.now()),
     };
   } catch (error) {
-    // Ignore broken cache files and fall back to a live reseller request.
+    return null;
   }
+};
+
+const loadServicesCacheFromDisk = () => {
+  const cachedServices = readServicesFromDisk(servicesCacheFile) || readServicesFromDisk(bundledServicesFallbackFile);
+
+  if (!cachedServices) {
+    return;
+  }
+
+  servicesCache = {
+    data: cachedServices.data,
+    fetchedAt: cachedServices.fetchedAt,
+    expiresAt: cachedServices.fetchedAt + servicesCacheTtlMs,
+  };
 };
 
 const writeServicesCacheToDisk = (data, fetchedAt) => {
@@ -67,13 +82,37 @@ const ensureResellerConfigured = () => {
   }
 };
 
+const getReadableResellerErrorMessage = (message = '') => {
+  const normalizedMessage = String(message || '').trim();
+  const lowercaseMessage = normalizedMessage.toLowerCase();
+
+  if (lowercaseMessage.includes('incorrect request') || lowercaseMessage.includes('reason code')) {
+    return 'CID reseller API rejected the request. Please verify that your SMM/Reseller API key is a valid panel API key for /api/v2, and restart the server after updating CID_API_KEY, SMM_API_KEY, or RESELLER_API_KEY.';
+  }
+
+  if (lowercaseMessage.includes('invalid key') || lowercaseMessage.includes('api key')) {
+    return 'CID reseller API key is invalid. Update SMM_API_KEY or RESELLER_API_KEY with the correct reseller panel key.';
+  }
+
+  return normalizedMessage;
+};
+
 const callSmmPanel = async (action, params = {}) => {
   const config = buildConfig();
   const payload = new URLSearchParams({
     key: config.apiKey,
+    api_key: config.apiKey,
     api_token: config.apiKey,
+    token: config.apiKey,
     action,
   });
+
+  if (config.apiKeyField && !['key', 'api_key'].includes(config.apiKeyField)) {
+    payload.set(config.apiKeyField, config.apiKey);
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.RESELLER_API_TIMEOUT_MS || 15000));
 
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
@@ -81,13 +120,51 @@ const callSmmPanel = async (action, params = {}) => {
     }
   });
 
-  const response = await fetch(config.baseUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: payload.toString(),
-  });
+  if (action === 'add') {
+    const serviceValue = params.service ?? params.serviceId;
+    const linkValue = params.link ?? params.url;
+    const quantityValue = params.quantity ?? params.qty ?? params.amount;
+
+    if (serviceValue !== undefined && serviceValue !== null && serviceValue !== '') {
+      payload.set('service', String(serviceValue));
+    }
+
+    if (linkValue !== undefined && linkValue !== null && linkValue !== '') {
+      payload.set('link', String(linkValue));
+      payload.set('url', String(linkValue));
+    }
+
+    if (quantityValue !== undefined && quantityValue !== null && quantityValue !== '') {
+      payload.set('quantity', String(quantityValue));
+      payload.set('qty', String(quantityValue));
+      payload.set('amount', String(quantityValue));
+    }
+  }
+
+  let response;
+
+  try {
+    response = await fetch(config.baseUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'YathuPubgStore/1.0',
+      },
+      signal: controller.signal,
+      body: payload.toString(),
+    });
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error('CID service request timed out. Please try again in a moment.');
+      timeoutError.statusCode = 504;
+      throw timeoutError;
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const raw = await response.text();
   let parsed;
@@ -100,8 +177,11 @@ const callSmmPanel = async (action, params = {}) => {
 
   if (!response.ok) {
     const error = new Error(
-      parsed?.error ||
-        parsed?.message ||
+      getReadableResellerErrorMessage(
+        parsed?.error ||
+          parsed?.message ||
+          `Reseller API request failed with status ${response.status}`
+      ) ||
         `Reseller API request failed with status ${response.status}`
     );
     error.statusCode = response.status;
@@ -110,7 +190,7 @@ const callSmmPanel = async (action, params = {}) => {
   }
 
   if (parsed?.error) {
-    const error = new Error(parsed.error);
+    const error = new Error(getReadableResellerErrorMessage(parsed.error));
     error.statusCode = 400;
     error.raw = parsed;
     throw error;
@@ -172,6 +252,16 @@ const getResellerServices = async ({ forceRefresh = false } = {}) => {
   } catch (error) {
     if (servicesCache.data) {
       return servicesCache.data;
+    }
+
+    const fallbackServices = readServicesFromDisk(bundledServicesFallbackFile);
+    if (fallbackServices?.data) {
+      servicesCache = {
+        data: fallbackServices.data,
+        fetchedAt: fallbackServices.fetchedAt,
+        expiresAt: Date.now() + servicesCacheTtlMs,
+      };
+      return fallbackServices.data;
     }
 
     if (error.statusCode === 429) {
