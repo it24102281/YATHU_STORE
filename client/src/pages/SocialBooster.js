@@ -231,12 +231,13 @@ const SocialBooster = () => {
       }
 
       const serviceId = String(service.cid_service_id || service.serviceId || '').toLowerCase();
-      const searchableText = `${serviceId} ${service.platform} ${service.category} ${service.name} ${service.description}`.toLowerCase();
-      const queryMatch =
-        searchableText.includes(normalizedQuery) ||
-        serviceId.includes(normalizedQuery.replace(/\s+/g, ''));
-
-      return queryMatch;
+      const searchableText = `${serviceId} ${service.name} ${service.platform} ${service.category} ${service.description}`.toLowerCase();
+      
+      // Split query into individual words/tokens for flexible word-order matching
+      const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+      
+      // All search terms must be matched anywhere within the service's searchable details
+      return queryWords.every((word) => searchableText.includes(word));
     });
   }, [services, query]);
 
@@ -471,11 +472,14 @@ const SocialBooster = () => {
 
           <div className="mt-14 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[32px] border border-white/10 bg-[#0d0d13] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.38)] sm:p-8">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <h2 className="mt-2 text-3xl font-black text-white">Premium Social Media Services</h2>
-                  </div>
-                <div className="relative w-full lg:max-w-sm">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-3xl font-black text-white">Premium Social Media Services</h2>
+                  <p className="mt-2 text-sm text-gray-400">
+                    Search for specific packages or filter by category below.
+                  </p>
+                </div>
+                <div className="relative w-full">
                   <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
                   <input
                     value={query}
@@ -484,7 +488,7 @@ const SocialBooster = () => {
                     onBlur={() => {
                       window.setTimeout(() => setIsSearchFocused(false), 150);
                     }}
-                    placeholder="Search TikTok, Instagram, Facebook..."
+                    placeholder="Search TikTok, Instagram, Facebook, YouTube..."
                     className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-4 pl-12 pr-4 text-white outline-none transition focus:border-purple-400/40"
                   />
                   {isSearchFocused && searchSuggestions.length > 0 && (
@@ -496,24 +500,24 @@ const SocialBooster = () => {
                             type="button"
                             onMouseDown={(event) => event.preventDefault()}
                             onClick={() => handleSuggestionSelect(service)}
-                            className="flex w-full items-start gap-3 border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/[0.04]"
+                            className="flex w-full items-start gap-4 border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/[0.04]"
                           >
-                          <div className="mt-0.5 rounded-full border border-purple-400/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-purple-200">
-                            ID:{service.cid_service_id || service.serviceId}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="line-clamp-2 break-words text-sm font-semibold text-white">
-                              {service.name}
+                            <div className="mt-0.5 rounded-full border border-purple-400/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-purple-200 flex-shrink-0">
+                              ID:{service.cid_service_id || service.serviceId}
                             </div>
-                            <div className="mt-1 text-xs text-gray-400">
-                              {service.category} {service.platform ? `• ${service.platform}` : ''}
+                            <div className="min-w-0 flex-1">
+                              <div className="line-clamp-2 break-words text-sm font-semibold text-white">
+                                {service.name}
+                              </div>
+                              <div className="mt-1 text-xs text-gray-400">
+                                {service.category} {service.platform ? `• ${service.platform}` : ''}
+                              </div>
+                              <div className="mt-2 text-sm font-bold text-emerald-300">
+                                {formatLkr(service.sellingPrice || service.price_lkr)} per 1000
+                              </div>
                             </div>
-                            <div className="mt-2 text-sm font-bold text-emerald-300">
-                              {formatLkr(service.sellingPrice || service.price_lkr)} per 1000
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
