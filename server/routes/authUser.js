@@ -437,7 +437,7 @@ router.post('/login', async (req, res) => {
       data: {
         token,
         role: 'user',
-        redirectTo: '/user/dashboard',
+        redirectTo: '/',
         user: getSafeUser(user),
       },
     });

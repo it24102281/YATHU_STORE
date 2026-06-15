@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -17,7 +17,7 @@ import {
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 
-const strongPasswordRegex = /^.{8,}$/;
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 const whatsappRegex = /^[0-9+\-\s()]{8,20}$/;
 
 const UserLogin = () => {
@@ -28,7 +28,6 @@ const UserLogin = () => {
     userSignup,
     verifyUserSignup,
     resendSignupCode,
-    isAuthenticated,
     isUserAuthenticated,
   } = useAuth();
 
@@ -37,7 +36,6 @@ const UserLogin = () => {
   const [password, setPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [submittingLogin, setSubmittingLogin] = useState(false);
-  const loginSubmitLockRef = useRef(false);
 
   const [signupForm, setSignupForm] = useState({
     fullName: '',
@@ -55,15 +53,10 @@ const UserLogin = () => {
   const [resendingCode, setResendingCode] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/admin/dashboard', { replace: true });
-      return;
-    }
-
     if (isUserAuthenticated) {
-      navigate(location.state?.from?.pathname || '/user/dashboard', { replace: true });
+      navigate(location.state?.from?.pathname || '/', { replace: true });
     }
-  }, [isAuthenticated, isUserAuthenticated, location.state, navigate]);
+  }, [isUserAuthenticated, location.state, navigate]);
 
   const setSignupField = (key, value) => {
     setSignupForm((prev) => ({ ...prev, [key]: value }));
@@ -85,30 +78,21 @@ const UserLogin = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
-    if (submittingLogin || loginSubmitLockRef.current) {
+    setSubmittingLogin(true);
+    const result = await userLogin(identifier, password);
+    setSubmittingLogin(false);
+
+    if (!result.success) {
+      toast.error(result.message);
       return;
     }
 
-    loginSubmitLockRef.current = true;
-    setSubmittingLogin(true);
-    try {
-      const result = await userLogin(identifier, password);
-
-      if (!result.success) {
-        toast.error(result.message);
-        return;
-      }
-
-      toast.success('Login successful');
-      console.log('[Frontend Login] Redirect status', {
-        role: result.role,
-        redirectTo: result.redirectTo || location.state?.from?.pathname || '/user/dashboard',
-      });
-      navigate(result.redirectTo || location.state?.from?.pathname || '/user/dashboard', { replace: true });
-    } finally {
-      loginSubmitLockRef.current = false;
-      setSubmittingLogin(false);
-    }
+    toast.success('Login successful');
+    console.log('[Frontend Login] Redirect status', {
+      role: result.role,
+      redirectTo: result.redirectTo || location.state?.from?.pathname || '/',
+    });
+    navigate(result.redirectTo || location.state?.from?.pathname || '/', { replace: true });
   };
 
   const handleSignupSubmit = async (e) => {
@@ -123,15 +107,6 @@ const UserLogin = () => {
     try {
       setSubmittingSignup(true);
       const response = await userSignup(signupForm);
-      if (response?.data?.emailDelivery === false) {
-        toast.success(response.message || 'Account created successfully. You can sign in now.');
-        setVerificationPending(false);
-        setVerificationCode('');
-        setIsSignupActive(false);
-        navigate('/user/login');
-        return;
-      }
-
       setVerificationPending(true);
       toast.success(response.message || 'Verification code sent to your email');
     } catch (errorResponse) {
@@ -326,7 +301,7 @@ const UserLogin = () => {
         </div>
 
         <p className="mt-5 text-sm leading-6 text-white/52">
-          Password must be at least 8 characters.
+          Password must be at least 8 characters and include uppercase, lowercase, and a number.
         </p>
 
         <button
@@ -452,13 +427,6 @@ const UserLogin = () => {
                   </span>
                 )}
               </button>
-
-              <Link
-                to="/admin/login"
-                className="mt-[18px] inline-flex items-center justify-center text-center text-[12px] font-medium tracking-[0.5px] text-white/45 transition-all duration-300 hover:text-[#c084fc] hover:[text-shadow:0_0_10px_rgba(192,132,252,0.35)] hover:underline hover:decoration-[#c084fc]/25 hover:underline-offset-2"
-              >
-                Staff Access
-              </Link>
             </form>
           </div>
 
@@ -601,13 +569,6 @@ const UserLogin = () => {
               >
                 {submittingLogin ? 'SIGNING IN...' : 'SIGN IN'}
               </button>
-
-              <Link
-                to="/admin/login"
-                className="mt-[18px] inline-flex items-center justify-center text-center text-[12px] font-medium tracking-[0.5px] text-white/45 transition-all duration-300 hover:text-[#c084fc] hover:[text-shadow:0_0_10px_rgba(192,132,252,0.35)] hover:underline hover:decoration-[#c084fc]/25 hover:underline-offset-2"
-              >
-                Staff Access
-              </Link>
 
               <button
                 type="button"
