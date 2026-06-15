@@ -45,9 +45,10 @@ const UserProfile = () => {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersLoaded, setOrdersLoaded] = useState(false);
 
-  useEffect(() => {
-    loadCustomer();
-  }, []);
+  // NOTE: loadCustomer() is intentionally NOT called here.
+  // The AuthContext calls it on app mount and sets customer data from the login
+  // response. Calling it again here would reset userLoading → true, causing
+  // RequireUserAuth to show an infinite spinner after every login.
 
   useEffect(() => {
     const nextTab = allowedTabs.includes(currentTab) ? currentTab : 'profile';
