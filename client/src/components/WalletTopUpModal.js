@@ -67,7 +67,7 @@ const formatLkr = (value) => {
 };
 
 const WalletTopUpModal = ({ isOpen, onClose, customerName = 'Customer', currentBalance = 0 }) => {
-  const [amount, setAmount] = useState('1000');
+  const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(paymentOptions[0].id);
   const [copiedKey, setCopiedKey] = useState('');
 
@@ -88,7 +88,7 @@ const WalletTopUpModal = ({ isOpen, onClose, customerName = 'Customer', currentB
 
   useEffect(() => {
     if (isOpen) {
-      setAmount('1000');
+      setAmount('');
       setPaymentMethod(paymentOptions[0].id);
       setCopiedKey('');
     }
