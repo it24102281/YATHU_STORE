@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const Admin = require('../models/Admin');
 const { protect, generateToken } = require('../middleware/auth');
+const { sendEmail, hasSmtpConfig, isSmtpDeliveryError, getEmailDeliveryErrorResponse } = require('../utils/email');
 const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
 
 const normalizeEmail = (value = '') => value.trim().toLowerCase();
@@ -354,6 +356,153 @@ router.get('/verify', protect, (req, res) => {
     },
     message: 'Token is valid'
   });
+});
+
+// POST /api/admin/forgot-password - Admin forgot password
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Please enter your email address' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const admin = await Admin.findOne({ email: normalizedEmail }).select('+resetPasswordToken +resetPasswordExpire');
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin email address was not found' });
+    }
+
+    const rawToken = admin.createPasswordResetToken();
+    await admin.save({ validateBeforeSave: false });
+
+    const baseUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/admin/reset-password?token=${rawToken}`;
+
+    if (!hasSmtpConfig()) {
+      admin.resetPasswordToken = undefined;
+      admin.resetPasswordExpire = undefined;
+      await admin.save({ validateBeforeSave: false });
+
+      return res.status(500).json({
+        success: false,
+        message: 'Email service is not configured yet. Please contact developer.',
+      });
+    }
+
+    try {
+      await sendEmail({
+        to: admin.email,
+        subject: 'Reset your YATHU ADMIN Control Panel password',
+        text: `Reset your YATHU ADMIN password using this secure link: ${resetUrl}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #0a0a0a; color: #f5f5f5; padding: 32px;">
+            <div style="max-width: 560px; margin: 0 auto; background: #111111; border: 1px solid rgba(168,85,247,0.2); border-radius: 20px; overflow: hidden;">
+              <div style="height: 4px; background: linear-gradient(90deg, transparent, #a855f7, transparent);"></div>
+              <div style="padding: 32px;">
+                <p style="color: #c084fc; font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase; font-weight: 700; margin: 0 0 16px;">YATHU ADMIN PANEL</p>
+                <h1 style="margin: 0 0 16px; font-size: 28px; line-height: 1.2;">Reset Your Admin Password</h1>
+                <p style="margin: 0 0 24px; color: #d1d5db; line-height: 1.7;">
+                  We received a request to reset your admin account password. Use the secure button below to choose a new password.
+                </p>
+                <a href="${resetUrl}" style="display: inline-block; padding: 14px 24px; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #ffffff; text-decoration: none; font-weight: 700;">
+                  Reset Password
+                </a>
+                <p style="margin: 24px 0 0; color: #9ca3af; line-height: 1.7;">
+                  This link expires in 30 minutes. If you did not request this reset, you can safely ignore this email.
+                </p>
+                <p style="margin: 16px 0 0; color: #9ca3af; word-break: break-all;">
+                  ${resetUrl}
+                </p>
+              </div>
+            </div>
+          </div>
+        `,
+      });
+    } catch (emailError) {
+      admin.resetPasswordToken = undefined;
+      admin.resetPasswordExpire = undefined;
+      await admin.save({ validateBeforeSave: false });
+
+      if (!isSmtpDeliveryError(emailError)) {
+        throw emailError;
+      }
+
+      console.error('[Admin Forgot Password] Reset email failed:', emailError.message);
+      return res.status(503).json({
+        success: false,
+        message: 'Password reset email could not be sent right now. Please try again later.',
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Reset link sent to your email',
+      data: process.env.NODE_ENV === 'development' ? { resetUrl } : undefined,
+    });
+  } catch (error) {
+    const deliveryError = getEmailDeliveryErrorResponse(error, 'Failed to send reset link');
+    return res.status(deliveryError.status).json({
+      success: false,
+      message: deliveryError.message,
+    });
+  }
+});
+
+// POST /api/admin/reset-password - Admin reset password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Reset token is required' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password and confirm password do not match',
+      });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const admin = await Admin.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: new Date() },
+    }).select('+password +resetPasswordToken +resetPasswordExpire');
+
+    if (!admin) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token is invalid or expired',
+      });
+    }
+
+    admin.password = password;
+    admin.resetPasswordToken = undefined;
+    admin.resetPasswordExpire = undefined;
+    await admin.save();
+
+    return res.json({
+      success: true,
+      message: 'Password reset successfully',
+    });
+  } catch (error) {
+    console.error('[Admin Reset Password] Reset failed:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
+      error: error.message,
+    });
+  }
 });
 
 module.exports = router;

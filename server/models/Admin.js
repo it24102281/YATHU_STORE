@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const adminSchema = new mongoose.Schema({
   email: {
@@ -34,6 +35,14 @@ const adminSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  resetPasswordToken: {
+    type: String,
+    select: false
+  },
+  resetPasswordExpire: {
+    type: Date,
+    select: false
   }
 }, {
   timestamps: true
@@ -65,4 +74,14 @@ adminSchema.methods.updateLastLogin = function() {
   return this.save();
 };
 
+adminSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpire = new Date(Date.now() + 1000 * 60 * 30); // 30 mins
+
+  return resetToken;
+};
+
 module.exports = mongoose.model('Admin', adminSchema);
+

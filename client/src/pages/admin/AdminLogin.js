@@ -241,6 +241,15 @@ const AdminLogin = () => {
                     </div>
                   </div>
 
+                  <div className="flex justify-end pr-1">
+                    <Link
+                      to="/admin/forgot-password"
+                      className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
+
                   <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">
                       Admin Note

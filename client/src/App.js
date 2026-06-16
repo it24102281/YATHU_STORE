@@ -43,6 +43,8 @@ import AdminOffers from './pages/admin/AdminOffers';
 import AdminAccounts from './pages/admin/AdminAccounts';
 import AdminContacts from './pages/admin/AdminContacts';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminForgotPassword from './pages/admin/AdminForgotPassword';
+import AdminResetPassword from './pages/admin/AdminResetPassword';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
@@ -96,6 +98,8 @@ function App() {
 
               {/* Admin Login - No Layout */}
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+              <Route path="/admin/reset-password" element={<AdminResetPassword />} />
 
               {/* 404 */}
               <Route path="*" element={
