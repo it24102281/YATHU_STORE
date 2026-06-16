@@ -87,7 +87,7 @@ const Navbar = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0 rounded-2xl px-2 py-1 transition-all duration-300 hover:bg-purple-500/10 hover:shadow-[0_0_22px_rgba(168,85,247,0.18)]">
-            <div className="hidden sm:flex flex-col items-center text-center">
+            <div className="flex flex-col items-start text-left">
               <span
                 className="font-black text-lg leading-none tracking-tight"
                 style={{
@@ -239,111 +239,111 @@ const Navbar = () => {
             {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
-
-        {/* Mobile Navigation */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="lg:hidden overflow-hidden border-t border-white/5 mt-1"
-            >
-              <div className="py-4 space-y-1">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.name}
-                    to={link.path}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`flex items-center px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                      isActive(link.path)
-                        ? 'text-purple-400 bg-purple-500/10 border border-purple-500/20'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                    style={{ fontFamily: 'Poppins, sans-serif' }}
-                  >
-                    {link.name}
-                  </Link>
-                ))}
-                <div className="pt-2 border-t border-white/5">
-                  {isAuthenticated ? (
-                    <>
-                      <div className="px-4 py-3 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)' }}>
-                          <User className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-purple-400">{admin?.name}</div>
-                          <div className="text-xs text-gray-500">Administrator</div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          navigate('/admin/dashboard');
-                        }}
-                        className="block w-full text-left px-4 py-2.5 text-sm text-purple-300 hover:bg-purple-500/10 rounded-xl transition-all duration-200"
-                      >
-                        Dashboard
-                      </button>
-                      <button onClick={handleAdminLogout}
-                        className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
-                        Logout
-                      </button>
-                    </>
-                  ) : isUserAuthenticated ? (
-                    <>
-                      <div className="px-4 py-3 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white" style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)' }}>
-                          {customerInitial}
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-purple-400">{customer?.fullName}</div>
-                          <div className="text-xs text-gray-500">{formattedCustomerFunds}</div>
-                        </div>
-                      </div>
-                      {customerMenuItems.map((item) => (
-                        <button
-                          key={item.label}
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            navigate(item.path);
-                          }}
-                          className="block w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-xl transition-all duration-200"
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                      <button onClick={handleCustomerLogout}
-                        className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
-                        Logout
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          setIsWalletTopUpOpen(true);
-                        }}
-                        className="block w-full text-left px-4 py-2.5 text-sm text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition-all duration-200"
-                      >
-                        Add Funds
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link to="/user/login" onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-200">
-                        <User className="w-4 h-4" />
-                        <span>Sign In</span>
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* Mobile Navigation */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="lg:hidden overflow-hidden absolute left-0 right-0 top-full bg-[#08080c]/98 backdrop-blur-3xl border-b border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] px-6 py-5"
+          >
+            <div className="space-y-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    isActive(link.path)
+                      ? 'text-purple-400 bg-purple-500/10 border border-purple-500/20'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                  style={{ fontFamily: 'Poppins, sans-serif' }}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <div className="pt-2 border-t border-white/5">
+                {isAuthenticated ? (
+                  <>
+                    <div className="px-4 py-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)' }}>
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-purple-400">{admin?.name}</div>
+                        <div className="text-xs text-gray-500">Administrator</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        navigate('/admin/dashboard');
+                      }}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-purple-300 hover:bg-purple-500/10 rounded-xl transition-all duration-200"
+                    >
+                      Dashboard
+                    </button>
+                    <button onClick={handleAdminLogout}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
+                      Logout
+                    </button>
+                  </>
+                ) : isUserAuthenticated ? (
+                  <>
+                    <div className="px-4 py-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white" style={{ background: 'linear-gradient(135deg,#8b5cf6,#a855f7)' }}>
+                        {customerInitial}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-purple-400">{customer?.fullName}</div>
+                        <div className="text-xs text-gray-500">{formattedCustomerFunds}</div>
+                      </div>
+                    </div>
+                    {customerMenuItems.map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          navigate(item.path);
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-xl transition-all duration-200"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                    <button onClick={handleCustomerLogout}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
+                      Logout
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsWalletTopUpOpen(true);
+                      }}
+                      className="block w-full text-left px-4 py-2.5 text-sm text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition-all duration-200"
+                    >
+                      Add Funds
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/user/login" onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-200">
+                      <User className="w-4 h-4" />
+                      <span>Sign In</span>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <WalletTopUpModal
         isOpen={isWalletTopUpOpen}
         onClose={() => setIsWalletTopUpOpen(false)}
