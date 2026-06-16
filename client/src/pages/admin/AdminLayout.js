@@ -134,7 +134,7 @@ const AdminLayout = () => {
         <div className="flex items-center justify-between h-16 bg-gray-950 border-b border-purple-500/20 px-6 z-30">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-400 hover:text-white transition lg:hidden"
+            className="text-gray-400 hover:text-white transition"
           >
             <Menu className="w-6 h-6" />
           </button>
