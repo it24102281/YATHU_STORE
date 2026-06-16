@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Components
@@ -122,6 +123,7 @@ function App() {
             pauseOnHover
             theme="dark"
           />
+          <SpeedInsights />
         </div>
       </Router>
     </AuthProvider>
