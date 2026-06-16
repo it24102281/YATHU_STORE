@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Components
 import WhatsAppButton from './components/WhatsAppButton';
@@ -110,6 +111,7 @@ function App() {
           </AnimatePresence>
 
           <WhatsAppButton />
+          <SpeedInsights />
           <ToastContainer
             position="top-right"
             autoClose={4000}

@@ -21,6 +21,7 @@ const AdminOrders = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [submittingToCid, setSubmittingToCid] = useState(false);
+  const [syncingOrderId, setSyncingOrderId] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -36,6 +37,25 @@ const AdminOrders = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewDetails = async (order) => {
+    setSelectedOrder(order);
+    if (order.cidOrderId) {
+      try {
+        setSyncingOrderId(order._id);
+        const response = await api.get(`/orders/${order._id}/sync`);
+        if (response.data?.success && response.data.order) {
+          const updatedOrder = response.data.order;
+          setOrders(prev => prev.map(o => o._id === updatedOrder._id ? updatedOrder : o));
+          setSelectedOrder(prev => prev && prev._id === updatedOrder._id ? updatedOrder : prev);
+        }
+      } catch (err) {
+        console.error('Failed to sync order details:', err);
+      } finally {
+        setSyncingOrderId(null);
+      }
     }
   };
 
@@ -158,7 +178,14 @@ const AdminOrders = () => {
                 {/* Order Number */}
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Order ID</p>
-                  <p className="font-mono text-sm text-purple-300">{String(order._id).slice(-10).toUpperCase()}</p>
+                  {order.cidOrderId ? (
+                    <>
+                      <p className="font-mono text-sm text-emerald-400 font-bold">CID: {order.cidOrderId}</p>
+                      <p className="text-[10px] text-gray-500 font-mono mt-0.5">Local: {String(order._id).slice(-10).toUpperCase()}</p>
+                    </>
+                  ) : (
+                    <p className="font-mono text-sm text-purple-300">{String(order._id).slice(-10).toUpperCase()}</p>
+                  )}
                 </div>
 
                 {/* Customer */}
@@ -185,7 +212,7 @@ const AdminOrders = () => {
 
                 {/* Actions */}
                 <button
-                  onClick={() => setSelectedOrder(order)}
+                  onClick={() => handleViewDetails(order)}
                   className="bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Eye className="w-4 h-4" />
@@ -213,7 +240,7 @@ const AdminOrders = () => {
               {/* Order Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-800/30 rounded-lg p-4">
-                  <p className="text-xs text-gray-400 mb-1">Order Number</p>
+                  <p className="text-xs text-gray-400 mb-1">Order Number (Local)</p>
                   <p className="text-white font-mono">{String(selectedOrder._id).slice(-10).toUpperCase()}</p>
                 </div>
                 <div className="bg-gray-800/30 rounded-lg p-4">
@@ -249,7 +276,7 @@ const AdminOrders = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-800/30 rounded-lg p-4">
                   <p className="text-xs text-gray-400 mb-1">Price INR</p>
                   <p className="text-white">Rs. {selectedOrder.priceInr || 0} INR</p>
@@ -258,11 +285,60 @@ const AdminOrders = () => {
                   <p className="text-xs text-gray-400 mb-1">Price LKR / 1000</p>
                   <p className="text-white">Rs. {selectedOrder.priceLkr || 0} LKR</p>
                 </div>
-                <div className="bg-gray-800/30 rounded-lg p-4">
-                  <p className="text-xs text-gray-400 mb-1">CID Order ID</p>
-                  <p className="text-white">{selectedOrder.cidOrderId || '-'}</p>
-                </div>
               </div>
+
+              {/* CID Growth Media Provider Data */}
+              {selectedOrder.cidOrderId && (
+                <div className="bg-purple-950/20 border border-purple-500/30 rounded-2xl p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-purple-300">CID Growth Media Live Data</span>
+                    {syncingOrderId === selectedOrder._id ? (
+                      <div className="flex items-center gap-1.5 text-xs text-purple-400 font-semibold">
+                        <Loader className="w-3.5 h-3.5 animate-spin" />
+                        <span>Syncing live data...</span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-gray-500 font-mono">Synced from API</span>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">CID Order ID</p>
+                      <p className="text-emerald-400 font-mono font-bold mt-1 text-sm">{selectedOrder.cidOrderId}</p>
+                    </div>
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">Status</p>
+                      <p className="text-purple-300 font-bold mt-1 text-sm">{selectedOrder.orderStatus}</p>
+                    </div>
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">Quantity</p>
+                      <p className="text-white font-bold mt-1 text-sm">{selectedOrder.cidQuantity || selectedOrder.quantity}</p>
+                    </div>
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">Remains</p>
+                      <p className="text-white font-bold mt-1 text-sm">{selectedOrder.cidRemains ?? selectedOrder.remains}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">Start Count</p>
+                      <p className="text-white font-bold mt-1 text-sm">{selectedOrder.cidStartCount || selectedOrder.startCount}</p>
+                    </div>
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">End Count</p>
+                      <p className="text-white font-bold mt-1 text-sm">{selectedOrder.cidEndCount || '-'}</p>
+                    </div>
+                  </div>
+
+                  {selectedOrder.apiError && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-300 text-xs p-3 rounded-xl">
+                      <strong>Reseller API Error:</strong> {selectedOrder.apiError}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {selectedOrder.link && (
                 <div className="bg-gray-800/30 rounded-lg p-4">

@@ -97,7 +97,14 @@ const UserOrders = () => {
                       <p className="text-xs uppercase tracking-[0.24em] text-gray-500 font-semibold">
                         {order.cidOrderId ? 'CID Order ID' : 'Order ID'}
                       </p>
-                      <p className="mt-2 text-xl font-black text-white">{order.orderId}</p>
+                      <p className="mt-2 text-xl font-black text-white">
+                        {order.cidOrderId ? `CID: ${order.orderId}` : order.orderId}
+                      </p>
+                      {order.cidOrderId && (
+                        <p className="text-xs text-gray-500 font-mono mt-1">
+                          Local Order ID: {order.localOrderId}
+                        </p>
+                      )}
                       <p className="mt-3 text-lg font-semibold text-purple-300">{order.productName}</p>
                       <p className="mt-1 text-sm text-gray-400">{order.category || 'General'}</p>
                     </div>

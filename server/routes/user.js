@@ -186,8 +186,8 @@ router.get('/orders', userMiddleware, async (req, res) => {
       const cidStartCount = firstPresent(resellerStatus?.start_count, resellerStatus?.startCount);
       const cidRemains = firstPresent(resellerStatus?.remains);
       const displayQuantity = toDisplayValue(cidQuantity, String(order.quantity || 0));
-      const displayRemains = toDisplayValue(cidRemains, order.cidOrderId ? '-' : String(order.remains || 0));
-      const displayStart = toDisplayValue(cidStartCount, order.startCount ? String(order.startCount) : '-');
+      const displayRemains = toDisplayValue(cidRemains, order.remains !== undefined && order.remains !== null ? String(order.remains) : (order.cidOrderId ? '-' : '0'));
+      const displayStart = toDisplayValue(cidStartCount, order.startCount !== undefined && order.startCount !== null ? String(order.startCount) : (order.cidOrderId ? '-' : '0'));
       const numericStart = toFiniteNumber(displayStart);
       const numericQuantity = toFiniteNumber(displayQuantity);
       const numericRemains = toFiniteNumber(displayRemains);
