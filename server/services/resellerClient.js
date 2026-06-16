@@ -273,7 +273,10 @@ const getResellerServices = async ({ forceRefresh = false } = {}) => {
 };
 const getResellerBalance = () => callReseller('balance');
 const getResellerOrderStatus = (orderId) => callReseller('status', { order: orderId });
+const getResellerOrdersStatus = (orderIds) => callReseller('status', { orders: orderIds.join(',') });
 const placeResellerOrder = (params) => callReseller('add', params);
+const requestResellerRefill = (orderId) => callReseller('refill', { order: orderId });
+const getResellerRefillsStatus = (refillIds) => callReseller('refill_status', { refills: refillIds.join(',') });
 
 module.exports = {
   isResellerConfigured,
@@ -281,5 +284,8 @@ module.exports = {
   getResellerServices,
   getResellerBalance,
   getResellerOrderStatus,
+  getResellerOrdersStatus,
   placeResellerOrder,
+  requestResellerRefill,
+  getResellerRefillsStatus,
 };

@@ -3,12 +3,16 @@ const { adminMiddleware } = require('../middleware/auth');
 const { userMiddleware } = require('../middleware/auth');
 const validator = require('validator');
 const Order = require('../models/Order');
+const Refill = require('../models/Refill');
 const {
   getResellerStatus,
   getResellerServices,
   getResellerBalance,
   getResellerOrderStatus,
+  getResellerOrdersStatus,
   placeResellerOrder,
+  requestResellerRefill,
+  getResellerRefillsStatus,
 } = require('../services/resellerClient');
 const {
   getSellingPriceForService,
@@ -620,6 +624,187 @@ router.post('/admin/place-order', adminMiddleware, async (req, res) => {
       success: false,
       message: error.message || 'Failed to place reseller order',
       error: process.env.NODE_ENV === 'development' ? error.raw || error.message : undefined,
+    });
+  }
+});
+
+router.get('/my-orders', userMiddleware, async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const ordersWithCid = orders.filter(o => o.cidOrderId);
+
+    if (ordersWithCid.length > 0) {
+      try {
+        const orderIds = ordersWithCid.map(o => o.cidOrderId);
+        const statusMap = await getResellerOrdersStatus(orderIds);
+
+        for (const order of ordersWithCid) {
+          const resellerData = statusMap[order.cidOrderId];
+          if (resellerData && !resellerData.error) {
+            order.orderStatus = resellerData.status || order.orderStatus;
+            
+            const remains = Number(resellerData.remains);
+            if (Number.isFinite(remains)) order.remains = remains;
+
+            const startCount = Number(resellerData.start_count ?? resellerData.startCount);
+            if (Number.isFinite(startCount)) order.startCount = startCount;
+
+            const charge = Number(resellerData.charge);
+            if (Number.isFinite(charge)) order.charge = charge;
+
+            order.refillAvailability = resellerData.refill !== undefined ? String(resellerData.refill) : '';
+            order.apiError = '';
+            await order.save();
+          } else if (resellerData && resellerData.error) {
+            order.apiError = resellerData.error;
+            await order.save();
+          }
+        }
+      } catch (syncError) {
+        console.error('[Social Booster My Orders Sync] Mass status check failed:', syncError.message);
+      }
+    }
+
+    const refreshedOrders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    return res.json({
+      success: true,
+      orders: refreshedOrders.map(order => ({
+        id: order._id,
+        orderId: order.cidOrderId || String(order._id).slice(-8).toUpperCase(),
+        localOrderId: String(order._id).slice(-8).toUpperCase(),
+        productName: order.productName,
+        serviceName: order.serviceName,
+        cidServiceId: order.cidServiceId,
+        category: order.category,
+        platform: order.platform,
+        quantity: order.quantity,
+        link: order.link,
+        price: order.price,
+        customerPrice: order.customerPrice,
+        priceLkr: order.priceLkr,
+        totalLkr: order.totalLkr,
+        paymentStatus: order.paymentStatus,
+        orderStatus: order.orderStatus,
+        cidOrderId: order.cidOrderId,
+        charge: order.charge,
+        startCount: order.startCount,
+        remains: order.remains,
+        refillId: order.refillId,
+        refillStatus: order.refillStatus,
+        refillAvailability: order.refillAvailability || '',
+        createdAt: order.createdAt,
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch customer orders',
+    });
+  }
+});
+
+router.post('/order/:id/refill', userMiddleware, async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    if (!order.cidOrderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'This order is not associated with a CID reseller service',
+      });
+    }
+
+    let refillResponse;
+    try {
+      refillResponse = await requestResellerRefill(order.cidOrderId);
+    } catch (apiError) {
+      return res.status(400).json({
+        success: false,
+        message: apiError.message || 'Refill request failed',
+      });
+    }
+
+    const refillId = refillResponse?.refill;
+
+    if (!refillId) {
+      return res.status(400).json({
+        success: false,
+        message: refillResponse?.error || 'CID Store did not return a refill ID',
+      });
+    }
+
+    const refill = await Refill.create({
+      user: req.user._id,
+      order: order._id,
+      refillId: String(refillId),
+      cidOrderId: order.cidOrderId,
+      link: order.link,
+      serviceName: order.serviceName || order.productName,
+      status: 'Pending',
+    });
+
+    order.refillId = String(refillId);
+    order.refillStatus = 'Pending';
+    await order.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Refill requested successfully',
+      data: refill,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to submit refill request',
+    });
+  }
+});
+
+router.get('/refill-history', userMiddleware, async (req, res) => {
+  try {
+    const refills = await Refill.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const activeRefills = refills.filter(r => r.status === 'Pending' || r.status === 'InProgress' || r.status === 'Awaiting');
+
+    if (activeRefills.length > 0) {
+      try {
+        const refillIds = activeRefills.map(r => r.refillId);
+        const refillStatuses = await getResellerRefillsStatus(refillIds);
+
+        if (Array.isArray(refillStatuses)) {
+          for (const item of refillStatuses) {
+            const refillDoc = activeRefills.find(r => r.refillId === String(item.refill));
+            if (refillDoc && item.status) {
+              refillDoc.status = item.status;
+              await refillDoc.save();
+
+              const orderDoc = await Order.findById(refillDoc.order);
+              if (orderDoc && orderDoc.refillId === refillDoc.refillId) {
+                orderDoc.refillStatus = item.status;
+                await orderDoc.save();
+              }
+            }
+          }
+        }
+      } catch (syncError) {
+        console.error('[Social Booster Refill History Sync] Mass refill status failed:', syncError.message);
+      }
+    }
+
+    const refreshedRefills = await Refill.find({ user: req.user._id }).sort({ createdAt: -1 });
+    return res.json({
+      success: true,
+      refills: refreshedRefills,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch refill history',
     });
   }
 });
