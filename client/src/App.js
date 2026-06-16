@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Analytics } from '@vercel/analytics/react';
 
 // Components
 import WhatsAppButton from './components/WhatsAppButton';
@@ -122,6 +123,7 @@ function App() {
             pauseOnHover
             theme="dark"
           />
+          <Analytics />
         </div>
       </Router>
     </AuthProvider>
