@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {
     "@heroicons/react": "^2.0.18",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.5.0",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.279.0",
@@ -24,7 +25,9 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": ["react-app"],
+    "extends": [
+      "react-app"
+    ],
     "rules": {
       "no-unused-vars": "off",
       "react-hooks/exhaustive-deps": "off"
