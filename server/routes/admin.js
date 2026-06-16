@@ -3,7 +3,23 @@ const router = express.Router();
 const crypto = require('crypto');
 const Admin = require('../models/Admin');
 const { protect, generateToken } = require('../middleware/auth');
-const { sendEmail, hasSmtpConfig, isSmtpDeliveryError, getEmailDeliveryErrorResponse } = require('../utils/email');
+const { sendEmail, hasSmtpConfig } = require('../utils/sendEmail');
+
+const isSmtpDeliveryError = (error) =>
+  error?.code === 'SMTP_CONNECTION_FAILED' || String(error?.message || '').toLowerCase().includes('smtp');
+
+const getEmailDeliveryErrorResponse = (error, fallbackMessage) => {
+  if (isSmtpDeliveryError(error)) {
+    return {
+      status: 503,
+      message: fallbackMessage,
+    };
+  }
+  return {
+    status: 500,
+    message: error.message || fallbackMessage,
+  };
+};
 const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
 
 const normalizeEmail = (value = '') => value.trim().toLowerCase();

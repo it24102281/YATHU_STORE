@@ -271,8 +271,28 @@ const connectDatabase = async () => {
   );
 };
 
+const cleanupDatabaseIndexes = async () => {
+  try {
+    const db = mongoose.connection.db;
+    const collections = await db.listCollections({ name: 'orders' }).toArray();
+    if (collections.length > 0) {
+      const indexes = await db.collection('orders').indexes();
+      const hasOrderNumberIndex = indexes.some(index => index.name === 'orderNumber_1');
+      if (hasOrderNumberIndex) {
+        await db.collection('orders').dropIndex('orderNumber_1');
+        console.log('[Mongo] Successfully dropped unique index orderNumber_1 from orders collection');
+      } else {
+        console.log('[Mongo] Index orderNumber_1 does not exist in orders collection');
+      }
+    }
+  } catch (error) {
+    console.error('[Mongo] Failed to cleanup legacy indexes:', error.message);
+  }
+};
+
 connectDatabase()
   .then(async () => {
+    await cleanupDatabaseIndexes();
     await ensureDefaultAdmin();
     await ensureFeaturedDealsSeedData();
     await verifySmtpOnStartup();
