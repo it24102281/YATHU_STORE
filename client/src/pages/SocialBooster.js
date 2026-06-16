@@ -775,22 +775,6 @@ const SocialBooster = () => {
                 )}
               </form>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-4 py-4 min-h-[120px] flex flex-col justify-center">
-                  <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Payment State</div>
-                  <div className="mt-2 flex items-center gap-2 text-white">
-                    <CheckCircle2 className="h-4 w-4 text-amber-300" />
-                    Pending until admin verification
-                  </div>
-                </div>
-                <Link
-                  to={isUserAuthenticated ? '/user/orders' : '/user/login'}
-                  state={isUserAuthenticated ? undefined : { from: { pathname: '/user/orders' } }}
-                  className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-semibold text-gray-200 transition hover:border-purple-400/30 hover:text-white min-h-[120px] flex items-center justify-center text-center"
-                >
-                  View My Booster Orders
-                </Link>
-              </div>
             </div>
           </div>
         </div>
