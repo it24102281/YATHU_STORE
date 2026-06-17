@@ -2,7 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=Russo+One&display=swap');
+
+.logo-text {
+  font-family: 'Russo One', sans-serif;
+  font-size: 24px;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
+.logo-text .accent {
+  color: #B794F6;
+}
+
+.logo-subtitle {
+  font-size: 10px;
+  color: #8B88A0;
+  letter-spacing: 3px;
+  margin-top: 4px;
+}
 
 * {
   margin: 0;

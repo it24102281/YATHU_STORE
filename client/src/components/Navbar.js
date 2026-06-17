@@ -460,21 +460,8 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0 rounded-2xl px-2 py-1 transition-all duration-300 hover:bg-purple-500/10 hover:shadow-[0_0_22px_rgba(168,85,247,0.18)]">
             <div className="flex flex-col items-start text-left">
-              <span
-                className="font-black text-lg leading-none tracking-tight"
-                style={{
-                  fontFamily: 'Poppins, sans-serif',
-                  background: 'linear-gradient(135deg, #a855f7, #c084fc)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                Yathu PUBG Store
-              </span>
-              <div className="w-full text-center text-[10px] text-gray-500 font-medium tracking-widest uppercase">
-                Gaming Marketplace
-              </div>
+              <div className="logo-text">Yathu <span className="accent">PUBG</span> Store</div>
+              <div className="logo-subtitle">GAMING MARKETPLACE</div>
             </div>
           </Link>
 
