@@ -659,27 +659,27 @@ const SocialBooster = () => {
           </motion.div>
 
           {/* Tab Navigation */}
-          <div className="mt-10 flex border-b border-white/10 gap-6">
+          <div className="mt-10 flex border-b border-white/10 gap-6 items-center">
             <button
               onClick={() => setActiveTab('order')}
-              className={`pb-4 text-base md:text-lg font-bold transition-all relative ${
-                activeTab === 'order' ? 'text-white border-b-2 border-purple-500' : 'text-gray-400 hover:text-white'
+              className={`pb-4 text-base md:text-lg font-bold transition-all relative border-b-2 ${
+                activeTab === 'order' ? 'text-white border-purple-500' : 'text-gray-400 border-transparent hover:text-white'
               }`}
             >
               New Order
             </button>
             <button
               onClick={() => setActiveTab('my-orders')}
-              className={`pb-4 text-base md:text-lg font-bold transition-all relative ${
-                activeTab === 'my-orders' ? 'text-white border-b-2 border-purple-500' : 'text-gray-400 hover:text-white'
+              className={`pb-4 text-base md:text-lg font-bold transition-all relative border-b-2 ${
+                activeTab === 'my-orders' ? 'text-white border-purple-500' : 'text-gray-400 border-transparent hover:text-white'
               }`}
             >
               My Orders
             </button>
             <button
               onClick={() => setActiveTab('refills')}
-              className={`pb-4 text-base md:text-lg font-bold transition-all relative ${
-                activeTab === 'refills' ? 'text-white border-b-2 border-purple-500' : 'text-gray-400 hover:text-white'
+              className={`pb-4 text-base md:text-lg font-bold transition-all relative border-b-2 ${
+                activeTab === 'refills' ? 'text-white border-purple-500' : 'text-gray-400 border-transparent hover:text-white'
               }`}
             >
               Refill History
