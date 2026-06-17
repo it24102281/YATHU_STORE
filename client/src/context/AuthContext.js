@@ -24,7 +24,7 @@ const clearUserTokens = () => {
 };
 const getStoredAdminToken = () => readStoredValue('adminToken') || readStoredValue('token');
 const getStoredUserToken = () => readStoredValue('userToken');
-const API_UNAVAILABLE_MESSAGE = 'Cannot reach the server. Please check that the backend API is running and allowed for this website.';
+const API_UNAVAILABLE_MESSAGE = 'Cannot reach the server. The backend may be waking up from a cold start (this can take up to 60 seconds). Please wait a moment and try again.';
 
 const initialState = {
   adminToken: getStoredAdminToken(),
@@ -181,7 +181,7 @@ const authReducer = (state, action) => {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 25000, // 25s — graceful timeout for Render free-tier cold starts
+  timeout: 60000, // 60s — graceful timeout for Render free-tier cold starts
   headers: {
     'Content-Type': 'application/json',
   },
