@@ -17,10 +17,12 @@
 }
 
 .logo-subtitle {
-  font-size: 10px;
+  font-size: 8px;
   color: #8B88A0;
   letter-spacing: 3px;
   margin-top: 4px;
+  width: 100%;
+  text-align: center;
 }
 
 * {
