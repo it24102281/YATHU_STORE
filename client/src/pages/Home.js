@@ -623,7 +623,7 @@ const Home = () => {
                   Accounts • UC Packages • Social Media Services
                 </p>
                 <p className="max-w-xl text-base leading-8 text-gray-400 sm:text-lg">
-                  Premium gaming accounts, UC packages & social media growth services delivered instantly with secure payments and trusted support for gamers across Sri Lanka.
+                  Premium gaming accounts, UC & social media growth — instant delivery, secure payments, trusted across Sri Lanka
                 </p>
               </motion.div>
 
