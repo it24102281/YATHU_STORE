@@ -51,20 +51,18 @@ const AdminFinance = () => {
       filteredOrders = orders.filter(o => new Date(o.createdAt) > monthAgo);
     }
 
-      const completedOrders = filteredOrders.filter(o => o.orderStatus === 'Completed');
-      const totalRevenue = completedOrders.reduce((sum, o) => sum + o.price, 0);
+    const completedOrders = filteredOrders.filter(o => o.orderStatus === 'Completed');
+    const totalCustomerCash = completedOrders.reduce((sum, o) => sum + o.price, 0);
+    const totalProfit = completedOrders.reduce((sum, o) => sum + (o.profit || 0), 0);
+    const cidSpentCost = completedOrders.reduce((sum, o) => sum + (o.price - (o.profit || 0)), 0);
     const totalOrders = filteredOrders.length;
-    const averageOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0;
 
     return {
-      totalRevenue: totalRevenue.toFixed(2),
+      totalCustomerCash: totalCustomerCash.toFixed(2),
+      cidSpentCost: cidSpentCost.toFixed(2),
+      totalProfit: totalProfit.toFixed(2),
       totalOrders,
       completedOrders: completedOrders.length,
-      averageOrderValue,
-      pendingRevenue: filteredOrders
-        .filter(o => o.orderStatus === 'Pending')
-        .reduce((sum, o) => sum + o.price, 0)
-        .toFixed(2)
     };
   };
 
@@ -72,28 +70,28 @@ const AdminFinance = () => {
 
   const statCards = [
     {
-      title: 'Total Revenue',
-      value: formatLkr(metrics.totalRevenue),
+      title: 'Total Customer Cash',
+      value: formatLkr(metrics.totalCustomerCash),
       icon: DollarSign,
       color: 'from-green-600 to-green-700'
     },
     {
-      title: 'Total Orders',
-      value: metrics.totalOrders,
+      title: 'CID Store Spent Cost',
+      value: formatLkr(metrics.cidSpentCost),
       icon: ShoppingCart,
-      color: 'from-blue-600 to-blue-700'
+      color: 'from-rose-600 to-rose-700'
+    },
+    {
+      title: 'Net Profit',
+      value: formatLkr(metrics.totalProfit),
+      icon: TrendingUp,
+      color: 'from-purple-600 to-purple-700'
     },
     {
       title: 'Completed Orders',
       value: metrics.completedOrders,
       icon: CheckCircle,
-      color: 'from-purple-600 to-purple-700'
-    },
-    {
-      title: 'Average Order Value',
-      value: formatLkr(metrics.averageOrderValue),
-      icon: TrendingUp,
-      color: 'from-pink-600 to-pink-700'
+      color: 'from-blue-600 to-blue-700'
     }
   ];
 

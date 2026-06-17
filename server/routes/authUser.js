@@ -156,10 +156,10 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please enter your WhatsApp number' });
     }
 
-    if (!strongPasswordRegex.test(password || '')) {
+    if (!password || password.length < 4) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number',
+        message: 'Password must be at least 4 characters long',
       });
     }
 
@@ -560,10 +560,10 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Reset token is required' });
     }
 
-    if (!strongPasswordRegex.test(password || '')) {
+    if (!password || password.length < 4) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number',
+        message: 'Password must be at least 4 characters long',
       });
     }
 

@@ -66,8 +66,8 @@ const UserLogin = () => {
     if (!signupForm.fullName.trim()) return 'Please enter your full name';
     if (!/\S+@\S+\.\S+/.test(signupForm.email)) return 'Please enter a valid email address';
     if (!whatsappRegex.test(signupForm.whatsappNumber)) return 'Please enter your WhatsApp number';
-    if (!strongPasswordRegex.test(signupForm.password)) {
-      return 'Password must be at least 8 characters and include uppercase, lowercase, and a number';
+    if (!signupForm.password || signupForm.password.length < 4) {
+      return 'Password must be at least 4 characters';
     }
     if (signupForm.password !== signupForm.confirmPassword) {
       return 'Password and confirm password do not match';
@@ -301,7 +301,7 @@ const UserLogin = () => {
         </div>
 
         <p className="mt-5 text-sm leading-6 text-white/52">
-          Password must be at least 8 characters and include uppercase, lowercase, and a number.
+          Password must be at least 4 characters.
         </p>
 
         <button
