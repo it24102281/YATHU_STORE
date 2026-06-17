@@ -12,6 +12,14 @@ import {
   FileText,
   ChevronDown,
   Plus,
+  Bell,
+  Trash2,
+  Megaphone,
+  AlertCircle,
+  CheckCircle,
+  RefreshCw,
+  Coins,
+  Package
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import WalletTopUpModal from './WalletTopUpModal';
@@ -23,7 +31,256 @@ const Navbar = () => {
   const [isWalletTopUpOpen, setIsWalletTopUpOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { admin, customer, isAuthenticated, isUserAuthenticated, logout, userLogout } = useAuth();
+  const { api, admin, customer, isAuthenticated, isUserAuthenticated, logout, userLogout } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  const fetchNotifications = async () => {
+    if (!isUserAuthenticated) return;
+    try {
+      setNotificationsLoading(true);
+      const res = await api.get('/notifications');
+      if (res.data?.success) {
+        setNotifications(res.data.notifications || []);
+        setUnreadCount(res.data.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err.message);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const markAsRead = async (notifId) => {
+    try {
+      const res = await api.put(`/notifications/${notifId}/read`);
+      if (res.data?.success) {
+        setNotifications(prev =>
+          prev.map(n => (n._id === notifId ? { ...n, isRead: true } : n))
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err.message);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const res = await api.put('/notifications/read-all');
+      if (res.data?.success) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+      }
+    } catch (err) {
+      console.error('Failed to mark all as read:', err.message);
+    }
+  };
+
+  const deleteNotification = async (notifId) => {
+    try {
+      const res = await api.delete(`/notifications/${notifId}`);
+      if (res.data?.success) {
+        const deletedNotif = notifications.find(n => n._id === notifId);
+        setNotifications(prev => prev.filter(n => n._id !== notifId));
+        if (deletedNotif && !deletedNotif.isRead) {
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete notification:', err.message);
+    }
+  };
+
+  const toggleNotifications = () => {
+    setIsNotificationsOpen(prev => {
+      const next = !prev;
+      if (next) {
+        fetchNotifications();
+      }
+      return next;
+    });
+  };
+
+  const getNotifIcon = (type) => {
+    switch (type) {
+      case 'order_created':
+        return <Plus className="h-4 w-4" />;
+      case 'order_completed':
+      case 'refill_completed':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'order_cancelled':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'refill_submitted':
+        return <RefreshCw className="h-4 w-4" />;
+      case 'wallet_credited':
+        return <Coins className="h-4 w-4" />;
+      case 'announcement':
+        return <Megaphone className="h-4 w-4" />;
+      case 'account_delivered':
+        return <Package className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  const getNotifIconStyle = (type) => {
+    switch (type) {
+      case 'order_created':
+        return 'bg-blue-500/10 border border-blue-500/20 text-blue-400';
+      case 'order_completed':
+      case 'refill_completed':
+        return 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400';
+      case 'order_cancelled':
+        return 'bg-red-500/10 border border-red-500/20 text-red-400';
+      case 'refill_submitted':
+        return 'bg-purple-500/10 border border-purple-500/20 text-purple-400';
+      case 'wallet_credited':
+        return 'bg-amber-500/10 border border-amber-500/20 text-amber-400';
+      case 'announcement':
+        return 'bg-pink-500/10 border border-pink-500/20 text-pink-400';
+      case 'account_delivered':
+        return 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400';
+      default:
+        return 'bg-gray-500/10 border border-gray-500/20 text-gray-400';
+    }
+  };
+
+  const formatTime = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
+  const renderNotificationsDropdown = (alignClass = 'right-0') => {
+    return (
+      <AnimatePresence>
+        {isNotificationsOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+            className={`absolute ${alignClass} top-[calc(100%+12px)] w-[calc(100vw-2rem)] sm:w-96 overflow-hidden rounded-[24px] border border-white/10 bg-[#0b0b11]/95 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl z-50 shadow-[0_0_50px_rgba(168,85,247,0.15)]`}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <span className="text-base font-black text-white flex items-center gap-2">
+                <Bell className="h-4 w-4 text-purple-400" />
+                Notifications
+              </span>
+              {notifications.length > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Mark all as read
+                </button>
+              )}
+            </div>
+
+            {notificationsLoading && notifications.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-500">
+                <RefreshCw className="h-6 w-6 animate-spin text-purple-500" />
+                <span className="text-xs">Loading notifications...</span>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-3 text-center">
+                <div className="h-12 w-12 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center text-gray-500">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-gray-300">No notifications</div>
+                  <div className="text-xs text-gray-500 mt-1">We'll let you know when something happens!</div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 max-h-[360px] overflow-y-auto pr-1 space-y-2.5 custom-scrollbar animate-fadeIn">
+                {notifications.map((item) => (
+                  <div
+                    key={item._id}
+                    onClick={() => {
+                      if (!item.isRead) markAsRead(item._id);
+                    }}
+                    className={`group relative flex gap-3 p-3 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                      item.isRead
+                        ? 'bg-transparent border-white/5 hover:bg-white/[0.02]'
+                        : 'bg-purple-500/[0.03] border-purple-500/10 hover:bg-purple-500/[0.05] hover:border-purple-500/20'
+                    }`}
+                  >
+                    <div className={`flex-shrink-0 h-9 w-9 rounded-xl flex items-center justify-center mt-0.5 ${getNotifIconStyle(item.type)}`}>
+                      {getNotifIcon(item.type)}
+                    </div>
+                    <div className="flex-1 min-w-0 pr-5">
+                      <div className="flex items-start justify-between gap-1.5">
+                        <p className={`text-xs sm:text-sm font-bold truncate ${item.isRead ? 'text-gray-300' : 'text-white'}`}>
+                          {item.title}
+                        </p>
+                        {!item.isRead && (
+                          <span className="flex h-2 w-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7] flex-shrink-0 mt-1.5" />
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1 leading-relaxed break-words">
+                        {item.message}
+                      </p>
+                      <span className="text-[10px] text-gray-500 mt-1.5 block">
+                        {formatTime(item.createdAt)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(item._id);
+                      }}
+                      className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 p-1 rounded-lg bg-white/5 hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all duration-200"
+                      title="Delete notification"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  };
+
+  useEffect(() => {
+    if (isUserAuthenticated) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+      setIsNotificationsOpen(false);
+    }
+  }, [isUserAuthenticated]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (isNotificationsOpen && !event.target.closest('.notifications-container')) {
+        setIsNotificationsOpen(false);
+      }
+      if (isCustomerMenuOpen && !event.target.closest('.customer-menu-container')) {
+        setIsCustomerMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [isNotificationsOpen, isCustomerMenuOpen]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -148,6 +405,27 @@ const Navbar = () => {
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
+
+                <div className="relative notifications-container">
+                  <button
+                    onClick={toggleNotifications}
+                    className={`relative inline-flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-300 ${
+                      isNotificationsOpen
+                        ? 'border-purple-400/50 bg-purple-500/10 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.25)]'
+                        : 'border-white/10 bg-white/[0.04] text-gray-400 hover:border-purple-400/35 hover:bg-white/[0.06] hover:text-white'
+                    }`}
+                    aria-label="Toggle notifications"
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white ring-2 ring-[#08080c]">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  {renderNotificationsDropdown('right-0')}
+                </div>
+
                 <button
                   onClick={() => setIsCustomerMenuOpen((prev) => !prev)}
                   className="inline-flex h-14 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 transition-all duration-300 hover:border-purple-400/35 hover:bg-white/[0.06]"
@@ -230,14 +508,38 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-2 rounded-xl text-gray-400 hover:text-white transition-all duration-200"
-            style={{ background: 'rgba(255,255,255,0.05)' }}
-          >
-            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+            {/* Mobile actions */}
+            <div className="lg:hidden flex items-center gap-3">
+              {isUserAuthenticated && (
+                <div className="relative notifications-container">
+                  <button
+                    onClick={toggleNotifications}
+                    className={`relative p-2.5 rounded-xl transition-all duration-200 ${
+                      isNotificationsOpen
+                        ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                        : 'text-gray-400 hover:text-white bg-white/5'
+                    }`}
+                    aria-label="Toggle notifications"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-[#08080c]">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  {renderNotificationsDropdown('right-[-52px]')}
+                </div>
+              )}
+
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 rounded-xl text-gray-400 hover:text-white transition-all duration-200"
+                style={{ background: 'rgba(255,255,255,0.05)' }}
+              >
+                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
         </div>
       </div>
 

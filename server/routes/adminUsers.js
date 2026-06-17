@@ -3,6 +3,7 @@ const validator = require('validator');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const { adminMiddleware } = require('../middleware/auth');
+const { sendNotificationToUser } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -207,6 +208,13 @@ router.put('/users/:id/wallet', adminMiddleware, async (req, res) => {
       createdAt: new Date(),
     });
     await user.save();
+
+    sendNotificationToUser(
+      user._id,
+      'wallet_credited',
+      'Wallet Balance Added',
+      `Rs. ${numericAmount.toLocaleString()} LKR has been added to your wallet. New Balance: Rs. ${user.walletBalance.toLocaleString()} LKR.`
+    );
 
     return res.json({
       success: true,

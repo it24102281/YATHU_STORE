@@ -2,6 +2,7 @@ const express = require('express');
 const Order = require('../models/Order');
 const { adminMiddleware } = require('../middleware/auth');
 const { getResellerOrderStatus } = require('../services/resellerClient');
+const { sendNotificationToUser } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -73,12 +74,30 @@ router.get('/:id/sync', adminMiddleware, async (req, res) => {
     if (order.cidOrderId) {
       try {
         const resellerStatus = await getResellerOrderStatus(order.cidOrderId);
+        const oldStatus = order.orderStatus;
         const resellerStatusText = resellerStatus.status || order.orderStatus;
         const nextCharge = toFiniteNumber(resellerStatus.charge);
         const nextStartCount = toFiniteNumber(firstPresent(resellerStatus.start_count, resellerStatus.startCount));
         const nextRemains = toFiniteNumber(resellerStatus.remains);
 
-        order.orderStatus = resellerStatusText;
+        if (oldStatus !== resellerStatusText) {
+          order.orderStatus = resellerStatusText;
+          if (resellerStatusText.toLowerCase() === 'completed') {
+            sendNotificationToUser(
+              order.user._id,
+              'order_completed',
+              'Order Completed',
+              `Your order for ${order.serviceName} has been completed.`
+            );
+          } else if (['cancelled', 'canceled', 'failed'].includes(resellerStatusText.toLowerCase())) {
+            sendNotificationToUser(
+              order.user._id,
+              'order_cancelled',
+              'Order Cancelled',
+              `Your order for ${order.serviceName} has been cancelled.`
+            );
+          }
+        }
         if (nextCharge !== null) order.charge = nextCharge;
         if (nextStartCount !== null) order.startCount = nextStartCount;
         if (nextRemains !== null) order.remains = nextRemains;
@@ -115,7 +134,26 @@ router.put('/:id/status', adminMiddleware, async (req, res) => {
   }
 
   if (orderStatus) {
+    const oldStatus = order.orderStatus;
     order.orderStatus = orderStatus;
+
+    if (oldStatus !== orderStatus) {
+      if (orderStatus.toLowerCase() === 'completed') {
+        sendNotificationToUser(
+          order.user._id,
+          'order_completed',
+          'Order Completed',
+          `Your order for ${order.serviceName} has been completed.`
+        );
+      } else if (['cancelled', 'canceled', 'failed'].includes(orderStatus.toLowerCase())) {
+        sendNotificationToUser(
+          order.user._id,
+          'order_cancelled',
+          'Order Cancelled',
+          `Your order for ${order.serviceName} has been cancelled.`
+        );
+      }
+    }
   }
 
   if (paymentStatus) {

@@ -4,6 +4,7 @@ const { userMiddleware } = require('../middleware/auth');
 const validator = require('validator');
 const Order = require('../models/Order');
 const Refill = require('../models/Refill');
+const { sendNotificationToUser } = require('../services/notificationService');
 const {
   getResellerStatus,
   getResellerServices,
@@ -384,6 +385,13 @@ router.post('/order', userMiddleware, async (req, res) => {
       });
     }
 
+    sendNotificationToUser(
+      req.user._id,
+      'order_created',
+      'New Order Created',
+      `Your order for ${order.serviceName} (Qty: ${order.quantity}) has been placed successfully. Order ID: ${order.cidOrderId || order._id}`
+    );
+
     return res.status(201).json({
       success: true,
       message: 'Social booster order submitted to CID successfully and the amount was deducted from your wallet.',
@@ -641,7 +649,27 @@ router.get('/my-orders', userMiddleware, async (req, res) => {
         for (const order of ordersWithCid) {
           const resellerData = statusMap[order.cidOrderId];
           if (resellerData && !resellerData.error) {
-            order.orderStatus = resellerData.status || order.orderStatus;
+            const oldStatus = order.orderStatus;
+            const newStatus = resellerData.status || order.orderStatus;
+            
+            if (oldStatus !== newStatus) {
+              order.orderStatus = newStatus;
+              if (newStatus.toLowerCase() === 'completed') {
+                sendNotificationToUser(
+                  req.user._id,
+                  'order_completed',
+                  'Order Completed',
+                  `Your order for ${order.serviceName} has been completed.`
+                );
+              } else if (['cancelled', 'canceled', 'failed'].includes(newStatus.toLowerCase())) {
+                sendNotificationToUser(
+                  req.user._id,
+                  'order_cancelled',
+                  'Order Cancelled',
+                  `Your order for ${order.serviceName} has been cancelled.`
+                );
+              }
+            }
             
             const remains = Number(resellerData.remains);
             if (Number.isFinite(remains)) order.remains = remains;
@@ -753,6 +781,13 @@ router.post('/order/:id/refill', userMiddleware, async (req, res) => {
     order.refillStatus = 'Pending';
     await order.save();
 
+    sendNotificationToUser(
+      req.user._id,
+      'refill_submitted',
+      'Refill Request Submitted',
+      `Your refill request for order ${order.cidOrderId || order._id} (Service: ${order.serviceName}) has been submitted successfully.`
+    );
+
     return res.status(201).json({
       success: true,
       message: 'Refill requested successfully',
@@ -780,13 +815,27 @@ router.get('/refill-history', userMiddleware, async (req, res) => {
           for (const item of refillStatuses) {
             const refillDoc = activeRefills.find(r => r.refillId === String(item.refill));
             if (refillDoc && item.status) {
-              refillDoc.status = item.status;
-              await refillDoc.save();
+              const oldStatus = refillDoc.status;
+              const newStatus = item.status;
+              
+              if (oldStatus !== newStatus) {
+                refillDoc.status = newStatus;
+                await refillDoc.save();
 
-              const orderDoc = await Order.findById(refillDoc.order);
-              if (orderDoc && orderDoc.refillId === refillDoc.refillId) {
-                orderDoc.refillStatus = item.status;
-                await orderDoc.save();
+                const orderDoc = await Order.findById(refillDoc.order);
+                if (orderDoc && orderDoc.refillId === refillDoc.refillId) {
+                  orderDoc.refillStatus = newStatus;
+                  await orderDoc.save();
+                }
+
+                if (newStatus.toLowerCase() === 'completed') {
+                  sendNotificationToUser(
+                    req.user._id,
+                    'refill_completed',
+                    'Refill Request Completed',
+                    `Your refill request (Refill ID: ${refillDoc.refillId}) for order ${refillDoc.cidOrderId} has been completed successfully.`
+                  );
+                }
               }
             }
           }

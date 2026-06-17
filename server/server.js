@@ -147,6 +147,7 @@ app.use('/api/admin', require('./routes/adminUsers'));
 app.use('/api/auth/user', require('./routes/authUser'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/orders', require('./routes/orders'));
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/social-booster', require('./routes/socialBooster'));
 app.use('/api/social', require('./routes/socialBooster'));

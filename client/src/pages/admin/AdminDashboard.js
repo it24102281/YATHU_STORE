@@ -9,8 +9,10 @@ import {
   AlertCircle,
   Loader,
   CheckCircle,
-  Clock
+  Clock,
+  Bell
 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
@@ -26,6 +28,9 @@ const AdminDashboard = () => {
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [recentProducts, setRecentProducts] = useState([]);
+  const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', message: '' });
+  const [announcementSending, setAnnouncementSending] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -56,8 +61,8 @@ const AdminDashboard = () => {
       const orders = ordersRes.data.orders || [];
 
       const totalRevenue = orders
-        .filter(o => o.orderStatus === 'Completed')
-        .reduce((sum, o) => sum + o.price, 0);
+          .filter(o => o.orderStatus === 'Completed')
+          .reduce((sum, o) => sum + o.price, 0);
 
       const pendingOrders = orders.filter(o => o.orderStatus === 'Pending').length;
       const completedOrders = orders.filter(o => o.orderStatus === 'Completed').length;
@@ -77,6 +82,30 @@ const AdminDashboard = () => {
       console.error('Failed to fetch dashboard data', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendAnnouncement = async () => {
+    const { title, message } = announcementForm;
+    if (!title || !message) {
+      toast.error('Title and message are required');
+      return;
+    }
+
+    try {
+      setAnnouncementSending(true);
+      const res = await api.post(
+        '/notifications/admin/announcement',
+        { title, message },
+        { headers: getAuthHeaders() }
+      );
+      toast.success(res.data?.message || 'Platform announcement broadcasted successfully');
+      setAnnouncementForm({ title: '', message: '' });
+      setAnnouncementModalOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to send announcement');
+    } finally {
+      setAnnouncementSending(false);
     }
   };
 
@@ -267,34 +296,103 @@ const AdminDashboard = () => {
             className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-lg p-6"
           >
             <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <a
                 href="/admin/inventory"
-                className="bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+                className="bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 font-bold px-4 py-3 rounded-lg transition-colors text-center flex items-center justify-center text-sm"
               >
                 Add Product
               </a>
               <a
                 href="/admin/orders"
-                className="bg-pink-600/30 hover:bg-pink-600/50 text-pink-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+                className="bg-pink-600/30 hover:bg-pink-600/50 text-pink-300 font-bold px-4 py-3 rounded-lg transition-colors text-center flex items-center justify-center text-sm"
               >
                 View Orders
               </a>
               <a
                 href="/admin/finance"
-                className="bg-green-600/30 hover:bg-green-600/50 text-green-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+                className="bg-green-600/30 hover:bg-green-600/50 text-green-300 font-bold px-4 py-3 rounded-lg transition-colors text-center flex items-center justify-center text-sm"
               >
                 Finance
               </a>
               <a
                 href="/admin/offers"
-                className="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold px-4 py-3 rounded-lg transition-colors text-center"
+                className="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold px-4 py-3 rounded-lg transition-colors text-center flex items-center justify-center text-sm"
               >
                 Social Pricing
               </a>
+              <button
+                onClick={() => setAnnouncementModalOpen(true)}
+                className="bg-yellow-600/30 hover:bg-yellow-600/50 text-yellow-300 font-bold px-4 py-3 rounded-lg transition-colors text-center flex items-center justify-center text-sm"
+              >
+                Send Announcement
+              </button>
             </div>
           </motion.div>
         </>
+      )}
+      {/* Announcement Modal */}
+      {announcementModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#09090d] p-6 shadow-[0_0_50px_rgba(168,85,247,0.15)]">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                <Bell className="w-6 h-6 text-purple-400" />
+                Broadcast Platform Announcement
+              </h2>
+              <button
+                onClick={() => setAnnouncementModalOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-400 mt-2">
+              This announcement will be broadcasted immediately to all registered users on their dashboard.
+            </p>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Title</label>
+                <input
+                  type="text"
+                  value={announcementForm.title}
+                  onChange={(e) => setAnnouncementForm(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white focus:outline-none focus:border-purple-500/50"
+                  placeholder="Enter announcement title..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Message</label>
+                <textarea
+                  value={announcementForm.message}
+                  onChange={(e) => setAnnouncementForm(prev => ({ ...prev, message: e.target.value }))}
+                  rows="4"
+                  className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 resize-none"
+                  placeholder="Enter announcement details..."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setAnnouncementModalOpen(false)}
+                className="rounded-2xl border border-white/10 px-5 py-3 text-gray-300 hover:bg-white/5 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendAnnouncement}
+                disabled={announcementSending}
+                className="rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 px-6 py-3 text-white font-bold disabled:opacity-60 transition"
+              >
+                {announcementSending ? 'Sending...' : 'Broadcast Announcement'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

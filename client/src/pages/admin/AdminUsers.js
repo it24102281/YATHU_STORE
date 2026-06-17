@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, Search, Shield, ShieldBan, Trash2, Users } from 'lucide-react';
+import { Eye, Search, Shield, ShieldBan, Trash2, Users, Bell } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,6 +22,15 @@ const AdminUsers = () => {
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [walletTopUp, setWalletTopUp] = useState('');
   const [saving, setSaving] = useState(false);
+  const [notificationModal, setNotificationModal] = useState({
+    isOpen: false,
+    userId: '',
+    userName: '',
+    title: '',
+    message: '',
+    type: 'general',
+    isAllUsers: false
+  });
 
   const fetchUsers = async (term = '') => {
     try {
@@ -128,6 +137,43 @@ const AdminUsers = () => {
     }
   };
 
+  const handleSendNotification = async () => {
+    const { userId, title, message, type, isAllUsers } = notificationModal;
+    if (!title || !message) {
+      toast.error('Title and message are required');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      let res;
+      if (isAllUsers) {
+        if (type === 'announcement') {
+          res = await api.post('/notifications/admin/announcement', { title, message }, { headers: getAuthHeaders() });
+        } else {
+          res = await api.post('/notifications/admin/send-all', { title, message, type }, { headers: getAuthHeaders() });
+        }
+      } else {
+        res = await api.post('/notifications/admin/send', { userId, title, message, type }, { headers: getAuthHeaders() });
+      }
+
+      toast.success(res.data?.message || 'Notification sent successfully');
+      setNotificationModal({
+        isOpen: false,
+        userId: '',
+        userName: '',
+        title: '',
+        message: '',
+        type: 'general',
+        isAllUsers: false
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to send notification');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const runAction = async (url, method, successMessage) => {
     try {
       const response =
@@ -153,6 +199,21 @@ const AdminUsers = () => {
           </h1>
           <p className="text-gray-400 mt-1">View, search, update, block, and manage customer accounts.</p>
         </div>
+        <button
+          onClick={() => setNotificationModal({
+            isOpen: true,
+            userId: '',
+            userName: 'All Users',
+            title: '',
+            message: '',
+            type: 'announcement',
+            isAllUsers: true
+          })}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold rounded-xl text-sm transition-all duration-300 shadow-[0_4px_15px_rgba(168,85,247,0.25)] hover:shadow-[0_4px_20px_rgba(168,85,247,0.4)]"
+        >
+          <Bell className="w-4 h-4" />
+          Send Announcement to All
+        </button>
       </div>
 
       <div className="bg-[#111] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
@@ -206,6 +267,21 @@ const AdminUsers = () => {
                   <td className="px-6 py-4 text-gray-400">{new Date(user.createdAt).toLocaleDateString()}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setNotificationModal({
+                          isOpen: true,
+                          userId: user.id,
+                          userName: user.fullName,
+                          title: '',
+                          message: '',
+                          type: 'general',
+                          isAllUsers: false
+                        })}
+                        className="p-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-lg"
+                        title="Send Notification to User"
+                      >
+                        <Bell className="w-4 h-4" />
+                      </button>
                       <button onClick={() => openView(user)} className="p-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg"><Eye className="w-4 h-4" /></button>
                       <button onClick={() => openEdit(user)} className="p-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg"><Shield className="w-4 h-4" /></button>
                       {user.status === 'Blocked' ? (
@@ -320,6 +396,79 @@ const AdminUsers = () => {
               <button onClick={closeModals} className="rounded-2xl border border-white/10 px-5 py-3 text-gray-300">Cancel</button>
               <button onClick={saveUser} disabled={saving} className="rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 px-5 py-3 text-white font-bold disabled:opacity-60">
                 {saving ? 'Saving...' : 'Save User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Notification Modal */}
+      {notificationModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#09090d] p-6 shadow-[0_0_50px_rgba(168,85,247,0.15)]">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-black text-white">
+                {notificationModal.isAllUsers ? 'Broadcast Notification to All Users' : `Send Notification to ${notificationModal.userName}`}
+              </h2>
+              <button
+                onClick={() => setNotificationModal(prev => ({ ...prev, isOpen: false }))}
+                className="text-gray-400 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notification Type</label>
+                <select
+                  value={notificationModal.type}
+                  onChange={(e) => setNotificationModal(prev => ({ ...prev, type: e.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white focus:outline-none focus:border-purple-500/50"
+                >
+                  <option value="general" className="bg-[#09090d]">General Notification</option>
+                  <option value="announcement" className="bg-[#09090d]">Platform Announcement</option>
+                  <option value="account_delivered" className="bg-[#09090d]">Account Purchase Delivered</option>
+                  <option value="wallet_credited" className="bg-[#09090d]">Wallet Balance Added</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Title</label>
+                <input
+                  type="text"
+                  value={notificationModal.title}
+                  onChange={(e) => setNotificationModal(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white focus:outline-none focus:border-purple-500/50"
+                  placeholder="Enter notification title..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Message</label>
+                <textarea
+                  value={notificationModal.message}
+                  onChange={(e) => setNotificationModal(prev => ({ ...prev, message: e.target.value }))}
+                  rows="4"
+                  className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 resize-none"
+                  placeholder="Enter notification message details..."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setNotificationModal(prev => ({ ...prev, isOpen: false }))}
+                className="rounded-2xl border border-white/10 px-5 py-3 text-gray-300 hover:bg-white/5 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendNotification}
+                disabled={saving}
+                className="rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 px-6 py-3 text-white font-bold disabled:opacity-60 transition"
+              >
+                {saving ? 'Sending...' : 'Send Notification'}
               </button>
             </div>
           </div>
