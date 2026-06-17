@@ -507,98 +507,107 @@ const Navbar = () => {
           {/* Right Actions */}
           <div className="hidden lg:flex items-center justify-end min-w-[140px]">
             {isUserAuthenticated ? (
-              <div className="relative flex items-center gap-3">
+              <div className="relative inline-flex h-11 items-center rounded-xl border border-purple-500/20 bg-[#0c0c14]/60 backdrop-blur-md shadow-[0_0_25px_rgba(168,85,247,0.04)] overflow-visible">
                 {/* Unified Wallet Button */}
                 <button
                   onClick={() => setIsWalletTopUpOpen(true)}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 hover:border-purple-400/40 px-3.5 text-xs sm:text-sm font-bold text-purple-200 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.08)] hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+                  className="inline-flex h-full items-center gap-2 rounded-l-xl hover:bg-purple-500/10 px-4 text-xs sm:text-sm font-bold text-purple-200 transition-colors"
                   aria-label="Wallet Balance"
                 >
                   <Wallet className="h-4 w-4 text-purple-400" />
                   <span>LKR {Number(customer?.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </button>
 
+                {/* Vertical Divider */}
+                <div className="h-4 w-[1px] bg-white/10 flex-shrink-0" />
+
                 {/* Notifications Button */}
-                <div className="relative notifications-container">
+                <div className="relative notifications-container h-full">
                   <button
                     onClick={toggleNotifications}
-                    className={`relative inline-flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-300 ${
+                    className={`relative inline-flex h-full w-11 items-center justify-center transition-colors ${
                       isNotificationsOpen
-                        ? 'border-purple-500/40 bg-purple-500/12 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                        : 'border-white/10 bg-white/[0.04] text-gray-400 hover:border-purple-500/30 hover:bg-white/[0.06] hover:text-white'
+                        ? 'text-purple-300 bg-purple-500/10 shadow-[inset_0_0_12px_rgba(168,85,247,0.08)]'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
                     }`}
                     aria-label="Toggle notifications"
                   >
                     <Bell className="h-4.5 w-4.5" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-[#08080c] animate-pulse">
-                        {unreadCount}
+                      <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-1 ring-red-400/20">
+                        <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />
+                        <span className="relative z-10">{unreadCount}</span>
                       </span>
                     )}
                   </button>
-                  {renderNotificationsDropdown('right-0')}
+                  {renderNotificationsDropdown('right-[-60px] md:right-0')}
                 </div>
 
+                {/* Vertical Divider */}
+                <div className="h-4 w-[1px] bg-white/10 flex-shrink-0" />
+
                 {/* User Profile Button */}
-                <button
-                  onClick={() => setIsCustomerMenuOpen((prev) => !prev)}
-                  className={`inline-flex h-11 items-center gap-2.5 rounded-xl border px-3 transition-all duration-300 ${
-                    isCustomerMenuOpen
-                      ? 'border-purple-500/40 bg-purple-500/12 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                      : 'border-white/10 bg-white/[0.04] text-gray-300 hover:border-purple-500/30 hover:bg-white/[0.06] hover:text-white'
-                  }`}
-                >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-violet-500 to-fuchsia-600 text-xs font-black text-white shadow-[0_4px_10px_rgba(139,92,246,0.3)]">
-                    {customerInitial}
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold max-w-[120px] truncate text-left">
-                    {customer?.fullName || 'Customer'}
-                  </span>
-                  <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${isCustomerMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
+                <div className="relative customer-menu-container h-full">
+                  <button
+                    onClick={() => setIsCustomerMenuOpen((prev) => !prev)}
+                    className={`inline-flex h-full items-center gap-2.5 rounded-r-xl px-4 transition-all duration-300 ${
+                      isCustomerMenuOpen
+                        ? 'text-purple-300 bg-purple-500/10'
+                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-violet-500 to-fuchsia-600 text-xs font-black text-white shadow-[0_4px_10px_rgba(139,92,246,0.3)] flex-shrink-0">
+                      {customerInitial}
+                    </div>
+                    <span className="text-xs sm:text-sm font-semibold max-w-[120px] truncate text-left">
+                      {customer?.fullName || 'Customer'}
+                    </span>
+                    <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${isCustomerMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-                <AnimatePresence>
-                  {isCustomerMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      transition={{ duration: 0.18 }}
-                      className="absolute right-0 top-[calc(100%+12px)] w-72 overflow-hidden rounded-[24px] border border-white/10 bg-[#0b0b11]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
-                    >
-                      <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                        <div className="text-lg font-black text-white">{customer?.fullName || 'Customer'}</div>
-                        <div className="mt-1 text-sm text-gray-400">{customer?.email || 'Signed in'}</div>
-                      </div>
+                  <AnimatePresence>
+                    {isCustomerMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        transition={{ duration: 0.18 }}
+                        className="absolute right-0 top-[calc(100%+12px)] w-72 overflow-hidden rounded-[24px] border border-white/10 bg-[#0b0b11]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl z-50"
+                      >
+                        <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+                          <div className="text-lg font-black text-white">{customer?.fullName || 'Customer'}</div>
+                          <div className="mt-1 text-sm text-gray-400">{customer?.email || 'Signed in'}</div>
+                        </div>
 
-                      <div className="mt-3 space-y-2">
-                        {customerMenuItems.map((item) => (
+                        <div className="mt-3 space-y-2">
+                          {customerMenuItems.map((item) => (
+                            <button
+                              key={item.label}
+                              onClick={() => {
+                                setIsCustomerMenuOpen(false);
+                                navigate(item.path);
+                              }}
+                              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-200 transition hover:bg-white/[0.05] hover:text-white"
+                            >
+                              <item.icon className="h-4 w-4 text-gray-400" />
+                              <span>{item.label}</span>
+                            </button>
+                          ))}
                           <button
-                            key={item.label}
-                            onClick={() => {
+                            onClick={async () => {
                               setIsCustomerMenuOpen(false);
-                              navigate(item.path);
+                              await handleCustomerLogout();
                             }}
-                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white/[0.05] hover:text-white"
+                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 hover:text-white"
                           >
-                            <item.icon className={`h-4 w-4 ${item.tone}`} />
-                            <span className={item.tone}>{item.label}</span>
+                            <LogOut className="h-4 w-4" />
+                            <span>Logout</span>
                           </button>
-                        ))}
-                        <button
-                          onClick={async () => {
-                            setIsCustomerMenuOpen(false);
-                            await handleCustomerLogout();
-                          }}
-                          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 hover:text-white"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          <span>Logout</span>
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             ) : isAuthenticated ? (
               <div className="flex items-center gap-3">
@@ -644,8 +653,9 @@ const Navbar = () => {
                   >
                     <Bell className="w-5 h-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-[#08080c]">
-                        {unreadCount}
+                      <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-1 ring-red-400/20">
+                        <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />
+                        <span className="relative z-10">{unreadCount}</span>
                       </span>
                     )}
                   </button>
