@@ -431,6 +431,14 @@ router.post('/login', async (req, res) => {
       email: user.email,
     });
 
+    const { sendNotificationToUser } = require('../services/notificationService');
+    sendNotificationToUser(
+      user._id,
+      'login_alert',
+      'Login Alert',
+      `A new login was detected for your account on ${new Date().toLocaleString()}.`
+    );
+
     return res.json({
       success: true,
       message: 'Login successful',
@@ -583,6 +591,14 @@ router.post('/reset-password', async (req, res) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
+
+    const { sendNotificationToUser } = require('../services/notificationService');
+    sendNotificationToUser(
+      user._id,
+      'password_changed',
+      'Password Changed',
+      'Your account password has been reset successfully.'
+    );
 
     return res.json({
       success: true,

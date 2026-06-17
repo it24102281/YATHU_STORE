@@ -11,6 +11,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const WHATSAPP_NUMBER = '94763442220';
 
@@ -67,6 +68,7 @@ const formatLkr = (value) => {
 };
 
 const WalletTopUpModal = ({ isOpen, onClose, customerName = 'Customer', currentBalance = 0 }) => {
+  const { api } = useAuth();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(paymentOptions[0].id);
   const [copiedKey, setCopiedKey] = useState('');
@@ -117,6 +119,19 @@ const WalletTopUpModal = ({ isOpen, onClose, customerName = 'Customer', currentB
       }, 1800);
     } catch (error) {
       setCopiedKey('');
+    }
+  };
+
+  const handleSubmit = async () => {
+    const numAmount = Number(amount);
+    if (!Number.isFinite(numAmount) || numAmount <= 0) return;
+    try {
+      await api.post('/notifications/recharge-submit', {
+        amount: numAmount,
+        paymentMethod: selectedOption.title
+      });
+    } catch (err) {
+      console.error('Failed to submit recharge notification:', err.message);
     }
   };
 
@@ -260,6 +275,7 @@ const WalletTopUpModal = ({ isOpen, onClose, customerName = 'Customer', currentB
                 href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={handleSubmit}
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-bold text-white transition hover:-translate-y-0.5"
                 style={{
                   background: 'linear-gradient(135deg,#22c55e,#16a34a)',

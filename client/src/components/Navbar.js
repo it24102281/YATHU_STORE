@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -35,6 +36,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isViewAllOpen, setIsViewAllOpen] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const fetchNotifications = async () => {
@@ -55,7 +57,7 @@ const Navbar = () => {
 
   const markAsRead = async (notifId) => {
     try {
-      const res = await api.put(`/notifications/${notifId}/read`);
+      const res = await api.post(`/notifications/read/${notifId}`);
       if (res.data?.success) {
         setNotifications(prev =>
           prev.map(n => (n._id === notifId ? { ...n, isRead: true } : n))
@@ -69,7 +71,7 @@ const Navbar = () => {
 
   const markAllAsRead = async () => {
     try {
-      const res = await api.put('/notifications/read-all');
+      const res = await api.post('/notifications/read-all');
       if (res.data?.success) {
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         setUnreadCount(0);
@@ -176,17 +178,28 @@ const Navbar = () => {
           >
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <span className="text-base font-black text-white flex items-center gap-2">
-                <Bell className="h-4 w-4 text-purple-400" />
+                <Bell className="h-4 w-4 text-purple-400 animate-pulse" />
                 Notifications
               </span>
-              {notifications.length > 0 && (
+              <div className="flex items-center gap-3">
+                {notifications.length > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                  >
+                    Mark All Read
+                  </button>
+                )}
                 <button
-                  onClick={markAllAsRead}
-                  className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                  onClick={() => {
+                    setIsNotificationsOpen(false);
+                    setIsViewAllOpen(true);
+                  }}
+                  className="text-xs font-semibold text-gray-400 hover:text-white transition-colors"
                 >
-                  Mark all as read
+                  View All
                 </button>
-              )}
+              </div>
             </div>
 
             {notificationsLoading && notifications.length === 0 ? (
@@ -268,6 +281,108 @@ const Navbar = () => {
       setIsNotificationsOpen(false);
     }
   }, [isUserAuthenticated]);
+
+  const renderViewAllModal = () => {
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
+      <AnimatePresence>
+        {isViewAllOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-2xl rounded-[28px] border border-white/10 bg-[#0c0c12] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.8)] max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <h3 className="text-xl font-black text-white flex items-center gap-2.5">
+                  <Bell className="h-5 w-5 text-purple-400 animate-pulse" />
+                  All Notifications
+                </h3>
+                <div className="flex items-center gap-4">
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                    >
+                      Mark All Read
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsViewAllOpen(false)}
+                    className="text-gray-400 hover:text-white text-sm font-semibold transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto mt-4 pr-1 space-y-3 custom-scrollbar">
+                {notifications.length === 0 ? (
+                  <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
+                    <div className="h-16 w-16 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center justify-center text-gray-500">
+                      <Bell className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="text-base font-bold text-gray-300">No notifications yet</div>
+                      <div className="text-sm text-gray-500 mt-1">We'll notify you here when order or account events occur.</div>
+                    </div>
+                  </div>
+                ) : (
+                  notifications.map((item) => (
+                    <div
+                      key={item._id}
+                      onClick={() => {
+                        if (!item.isRead) markAsRead(item._id);
+                      }}
+                      className={`group relative flex gap-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                        item.isRead
+                          ? 'bg-transparent border-white/5 hover:bg-white/[0.01]'
+                          : 'bg-purple-500/[0.02] border-purple-500/10 hover:bg-purple-500/[0.04] hover:border-purple-500/20'
+                      }`}
+                    >
+                      <div className={`flex-shrink-0 h-10 w-10 rounded-xl flex items-center justify-center ${getNotifIconStyle(item.type)}`}>
+                        {getNotifIcon(item.type)}
+                      </div>
+                      <div className="flex-1 min-w-0 pr-8">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm sm:text-base font-bold truncate ${item.isRead ? 'text-gray-300' : 'text-white'}`}>
+                            {item.title}
+                          </p>
+                          {!item.isRead && (
+                            <span className="h-2.5 w-2.5 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7] flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-gray-400 mt-1.5 leading-relaxed break-words">
+                          {item.message}
+                        </p>
+                        <span className="text-[11px] text-gray-500 mt-2 block">
+                          {formatTime(item.createdAt)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteNotification(item._id);
+                        }}
+                        className="absolute right-4 top-4 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all duration-200"
+                        title="Delete notification"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>,
+      document.body
+    );
+  };
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -393,32 +508,30 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center justify-end min-w-[140px]">
             {isUserAuthenticated ? (
               <div className="relative flex items-center gap-3">
-                <div className="inline-flex h-12 items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 text-sm font-bold text-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.12)]">
-                  <Wallet className="mr-2 h-4 w-4 text-emerald-300" />
-                  {formattedCustomerFunds}
-                  <button
-                    type="button"
-                    onClick={() => setIsWalletTopUpOpen(true)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-100 transition hover:border-emerald-300/50 hover:bg-emerald-400/20"
-                    aria-label="Add funds to wallet"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
+                {/* Unified Wallet Button */}
+                <button
+                  onClick={() => setIsWalletTopUpOpen(true)}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 hover:border-purple-400/40 px-3.5 text-xs sm:text-sm font-bold text-purple-200 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.08)] hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+                  aria-label="Wallet Balance"
+                >
+                  <Wallet className="h-4 w-4 text-purple-400" />
+                  <span>LKR {Number(customer?.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </button>
 
+                {/* Notifications Button */}
                 <div className="relative notifications-container">
                   <button
                     onClick={toggleNotifications}
-                    className={`relative inline-flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-300 ${
+                    className={`relative inline-flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-300 ${
                       isNotificationsOpen
-                        ? 'border-purple-400/50 bg-purple-500/10 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.25)]'
-                        : 'border-white/10 bg-white/[0.04] text-gray-400 hover:border-purple-400/35 hover:bg-white/[0.06] hover:text-white'
+                        ? 'border-purple-500/40 bg-purple-500/12 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                        : 'border-white/10 bg-white/[0.04] text-gray-400 hover:border-purple-500/30 hover:bg-white/[0.06] hover:text-white'
                     }`}
                     aria-label="Toggle notifications"
                   >
-                    <Bell className="h-5 w-5" />
+                    <Bell className="h-4.5 w-4.5" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white ring-2 ring-[#08080c]">
+                      <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-[#08080c] animate-pulse">
                         {unreadCount}
                       </span>
                     )}
@@ -426,14 +539,22 @@ const Navbar = () => {
                   {renderNotificationsDropdown('right-0')}
                 </div>
 
+                {/* User Profile Button */}
                 <button
                   onClick={() => setIsCustomerMenuOpen((prev) => !prev)}
-                  className="inline-flex h-14 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 transition-all duration-300 hover:border-purple-400/35 hover:bg-white/[0.06]"
+                  className={`inline-flex h-11 items-center gap-2.5 rounded-xl border px-3 transition-all duration-300 ${
+                    isCustomerMenuOpen
+                      ? 'border-purple-500/40 bg-purple-500/12 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                      : 'border-white/10 bg-white/[0.04] text-gray-300 hover:border-purple-500/30 hover:bg-white/[0.06] hover:text-white'
+                  }`}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 via-violet-500 to-fuchsia-600 text-sm font-black text-white shadow-[0_10px_24px_rgba(139,92,246,0.32)]">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-violet-500 to-fuchsia-600 text-xs font-black text-white shadow-[0_4px_10px_rgba(139,92,246,0.3)]">
                     {customerInitial}
                   </div>
-                  <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isCustomerMenuOpen ? 'rotate-180' : ''}`} />
+                  <span className="text-xs sm:text-sm font-semibold max-w-[120px] truncate text-left">
+                    {customer?.fullName || 'Customer'}
+                  </span>
+                  <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${isCustomerMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
@@ -652,6 +773,7 @@ const Navbar = () => {
         customerName={customer?.fullName || 'Customer'}
         currentBalance={customer?.walletBalance || 0}
       />
+      {renderViewAllModal()}
     </nav>
   );
 };

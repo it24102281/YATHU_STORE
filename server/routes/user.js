@@ -135,6 +135,14 @@ router.put('/change-password', userMiddleware, async (req, res) => {
     freshUser.password = newPassword;
     await freshUser.save();
 
+    const { sendNotificationToUser } = require('../services/notificationService');
+    sendNotificationToUser(
+      freshUser._id,
+      'password_changed',
+      'Password Changed',
+      'Your account password has been changed successfully.'
+    );
+
     return res.json({
       success: true,
       message: 'Password changed successfully',

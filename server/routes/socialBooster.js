@@ -389,7 +389,16 @@ router.post('/order', userMiddleware, async (req, res) => {
       req.user._id,
       'order_created',
       'New Order Created',
-      `Your order for ${order.serviceName} (Qty: ${order.quantity}) has been placed successfully. Order ID: ${order.cidOrderId || order._id}`
+      `Your order for ${order.serviceName} (Qty: ${order.quantity}) has been placed successfully. Order ID: ${order.cidOrderId || order._id}`,
+      { orderId: order._id, amount: order.totalLkr }
+    );
+
+    sendNotificationToUser(
+      req.user._id,
+      'wallet_deducted',
+      'Wallet Deducted For Order',
+      `LKR ${order.totalLkr} has been deducted from your wallet for social booster order: ${order.serviceName}.`,
+      { orderId: order._id, amount: order.totalLkr }
     );
 
     return res.status(201).json({
@@ -654,19 +663,30 @@ router.get('/my-orders', userMiddleware, async (req, res) => {
             
             if (oldStatus !== newStatus) {
               order.orderStatus = newStatus;
+              const targetUserId = order.user || req.user._id;
               if (newStatus.toLowerCase() === 'completed') {
                 sendNotificationToUser(
-                  req.user._id,
+                  targetUserId,
                   'order_completed',
                   'Order Completed',
-                  `Your order for ${order.serviceName} has been completed.`
+                  `Your Instagram Followers order #${order.cidOrderId || order._id} has been completed.`,
+                  { orderId: order._id }
+                );
+              } else if (newStatus.toLowerCase() === 'processing' || newStatus.toLowerCase() === 'inprogress') {
+                sendNotificationToUser(
+                  targetUserId,
+                  'order_processing',
+                  'Order Processing',
+                  `Your order #${order.cidOrderId || order._id} for ${order.serviceName} is now processing.`,
+                  { orderId: order._id }
                 );
               } else if (['cancelled', 'canceled', 'failed'].includes(newStatus.toLowerCase())) {
                 sendNotificationToUser(
-                  req.user._id,
+                  targetUserId,
                   'order_cancelled',
                   'Order Cancelled',
-                  `Your order for ${order.serviceName} has been cancelled.`
+                  `Your TikTok Likes order #${order.cidOrderId || order._id} was cancelled.`,
+                  { orderId: order._id }
                 );
               }
             }
@@ -785,7 +805,8 @@ router.post('/order/:id/refill', userMiddleware, async (req, res) => {
       req.user._id,
       'refill_submitted',
       'Refill Request Submitted',
-      `Your refill request for order ${order.cidOrderId || order._id} (Service: ${order.serviceName}) has been submitted successfully.`
+      `Your refill request for order ${order.cidOrderId || order._id} (Service: ${order.serviceName}) has been submitted successfully.`,
+      { refillId: refill.refillId }
     );
 
     return res.status(201).json({
@@ -828,12 +849,31 @@ router.get('/refill-history', userMiddleware, async (req, res) => {
                   await orderDoc.save();
                 }
 
+                const targetUserId = refillDoc.user || req.user._id;
+
                 if (newStatus.toLowerCase() === 'completed') {
                   sendNotificationToUser(
-                    req.user._id,
+                    targetUserId,
                     'refill_completed',
-                    'Refill Request Completed',
-                    `Your refill request (Refill ID: ${refillDoc.refillId}) for order ${refillDoc.cidOrderId} has been completed successfully.`
+                    'Refill Completed',
+                    `Your refill request has been completed successfully.`,
+                    { refillId: refillDoc.refillId }
+                  );
+                } else if (['inprogress', 'approved'].includes(newStatus.toLowerCase())) {
+                  sendNotificationToUser(
+                    targetUserId,
+                    'refill_approved',
+                    'Refill Approved',
+                    `Your refill request (Refill ID: ${refillDoc.refillId}) has been approved and is now in progress.`,
+                    { refillId: refillDoc.refillId }
+                  );
+                } else if (['cancelled', 'canceled', 'rejected', 'failed'].includes(newStatus.toLowerCase())) {
+                  sendNotificationToUser(
+                    targetUserId,
+                    'refill_cancelled',
+                    'Refill Cancelled',
+                    `Your refill request (Refill ID: ${refillDoc.refillId}) was cancelled.`,
+                    { refillId: refillDoc.refillId }
                   );
                 }
               }

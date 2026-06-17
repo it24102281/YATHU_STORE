@@ -136,6 +136,18 @@ router.post('/', protect, async (req, res) => {
     const account = new Account(req.body);
     await account.save();
 
+    try {
+      const { sendNotificationToAllUsers } = require('../services/notificationService');
+      await sendNotificationToAllUsers(
+        'new_service',
+        'New Announcement',
+        `New ${account.name} account is now available.`,
+        { amount: account.price }
+      );
+    } catch (notifErr) {
+      console.error('[Account Creation Notification] Failed to notify: ', notifErr.message);
+    }
+
     res.status(201).json({
       success: true,
       data: account,

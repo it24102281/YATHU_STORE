@@ -82,19 +82,30 @@ router.get('/:id/sync', adminMiddleware, async (req, res) => {
 
         if (oldStatus !== resellerStatusText) {
           order.orderStatus = resellerStatusText;
+          const targetUserId = order.user._id || order.user;
           if (resellerStatusText.toLowerCase() === 'completed') {
             sendNotificationToUser(
-              order.user._id,
+              targetUserId,
               'order_completed',
               'Order Completed',
-              `Your order for ${order.serviceName} has been completed.`
+              `Your Instagram Followers order #${order.cidOrderId || order._id} has been completed.`,
+              { orderId: order._id }
+            );
+          } else if (resellerStatusText.toLowerCase() === 'processing' || resellerStatusText.toLowerCase() === 'inprogress') {
+            sendNotificationToUser(
+              targetUserId,
+              'order_processing',
+              'Order Processing',
+              `Your order #${order.cidOrderId || order._id} for ${order.serviceName} is now processing.`,
+              { orderId: order._id }
             );
           } else if (['cancelled', 'canceled', 'failed'].includes(resellerStatusText.toLowerCase())) {
             sendNotificationToUser(
-              order.user._id,
+              targetUserId,
               'order_cancelled',
               'Order Cancelled',
-              `Your order for ${order.serviceName} has been cancelled.`
+              `Your TikTok Likes order #${order.cidOrderId || order._id} was cancelled.`,
+              { orderId: order._id }
             );
           }
         }
@@ -138,19 +149,30 @@ router.put('/:id/status', adminMiddleware, async (req, res) => {
     order.orderStatus = orderStatus;
 
     if (oldStatus !== orderStatus) {
+      const targetUserId = order.user?._id || order.user;
       if (orderStatus.toLowerCase() === 'completed') {
         sendNotificationToUser(
-          order.user._id,
+          targetUserId,
           'order_completed',
           'Order Completed',
-          `Your order for ${order.serviceName} has been completed.`
+          `Your Instagram Followers order #${order.cidOrderId || order._id} has been completed.`,
+          { orderId: order._id }
+        );
+      } else if (orderStatus.toLowerCase() === 'processing' || orderStatus.toLowerCase() === 'inprogress') {
+        sendNotificationToUser(
+          targetUserId,
+          'order_processing',
+          'Order Processing',
+          `Your order #${order.cidOrderId || order._id} for ${order.serviceName} is now processing.`,
+          { orderId: order._id }
         );
       } else if (['cancelled', 'canceled', 'failed'].includes(orderStatus.toLowerCase())) {
         sendNotificationToUser(
-          order.user._id,
+          targetUserId,
           'order_cancelled',
           'Order Cancelled',
-          `Your order for ${order.serviceName} has been cancelled.`
+          `Your TikTok Likes order #${order.cidOrderId || order._id} was cancelled.`,
+          { orderId: order._id }
         );
       }
     }

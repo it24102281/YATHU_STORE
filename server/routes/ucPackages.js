@@ -28,12 +28,29 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/uc-packages - Create package (protected)
+// POST /api/uc-packages - Create new package (protected)
 router.post('/', protect, async (req, res) => {
   try {
     const pkg = new UCPackage(req.body);
     await pkg.save();
-    res.status(201).json({ success: true, data: pkg, message: 'UC package created successfully' });
+
+    try {
+      const { sendNotificationToAllUsers } = require('../services/notificationService');
+      await sendNotificationToAllUsers(
+        'new_service',
+        'New Announcement',
+        `New ${pkg.name} UC package is now available.`,
+        { amount: pkg.price }
+      );
+    } catch (notifErr) {
+      console.error('[UC Package Creation Notification] Failed to notify:', notifErr.message);
+    }
+
+    res.status(201).json({
+      success: true,
+      data: pkg,
+      message: 'Package created successfully'
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: 'Error creating UC package', error: error.message });
   }

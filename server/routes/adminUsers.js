@@ -101,12 +101,25 @@ router.put('/users/:id', adminMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'WhatsApp number already exists' });
     }
 
+    const oldEmail = user.email;
+    const newEmail = email.toLowerCase().trim();
+    const isEmailChanged = oldEmail !== newEmail;
+
     user.fullName = fullName.trim();
-    user.email = email.toLowerCase().trim();
+    user.email = newEmail;
     user.whatsappNumber = whatsappNumber.trim();
     user.role = ['customer', 'admin'].includes(role) ? role : 'customer';
     user.isBlocked = Boolean(isBlocked);
     await user.save();
+
+    if (isEmailChanged) {
+      sendNotificationToUser(
+        user._id,
+        'email_updated',
+        'Email Address Updated',
+        `Your account email address has been updated to ${newEmail}.`
+      );
+    }
 
     return res.json({
       success: true,
@@ -213,7 +226,24 @@ router.put('/users/:id/wallet', adminMiddleware, async (req, res) => {
       user._id,
       'wallet_credited',
       'Wallet Balance Added',
-      `Rs. ${numericAmount.toLocaleString()} LKR has been added to your wallet. New Balance: Rs. ${user.walletBalance.toLocaleString()} LKR.`
+      `Rs. ${numericAmount.toLocaleString()} LKR has been added to your wallet. New Balance: Rs. ${user.walletBalance.toLocaleString()} LKR.`,
+      { amount: numericAmount }
+    );
+
+    sendNotificationToUser(
+      user._id,
+      'wallet_recharge_approved',
+      'Wallet Recharge Approved',
+      `Your recharge request of Rs. ${numericAmount.toLocaleString()} LKR has been approved.`,
+      { amount: numericAmount }
+    );
+
+    sendNotificationToUser(
+      user._id,
+      'wallet_recharge_completed',
+      'Wallet Recharge Completed',
+      `Your wallet recharge of Rs. ${numericAmount.toLocaleString()} LKR has been completed successfully.`,
+      { amount: numericAmount }
     );
 
     return res.json({
