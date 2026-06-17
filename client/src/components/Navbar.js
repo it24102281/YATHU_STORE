@@ -446,13 +446,23 @@ const Navbar = () => {
           ? 'py-2'
           : 'py-3'
       }`}
-      style={{
-        background: 'transparent',
-        backdropFilter: 'none',
-        WebkitBackdropFilter: 'none',
-        borderBottom: 'none',
-        boxShadow: 'none',
-      }}
+      style={
+        isScrolled
+          ? {
+              background: 'rgba(8, 8, 12, 0.75)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              borderBottom: '1px solid rgba(139, 92, 246, 0.1)',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+            }
+          : {
+              background: 'transparent',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none',
+              borderBottom: 'none',
+              boxShadow: 'none',
+            }
+      }
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">

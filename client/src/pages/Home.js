@@ -374,7 +374,6 @@ const HolographicControllerVisual = () => (
       transition={{ duration: 9.5, repeat: Infinity, ease: 'easeInOut' }}
       className="relative z-10 w-[360px] max-w-full sm:w-[540px] lg:w-[640px]"
       style={{
-        transformStyle: 'preserve-3d',
         filter: 'drop-shadow(0 28px 60px rgba(0,0,0,0.58)) drop-shadow(0 0 22px rgba(168,85,247,0.42))',
       }}
     >
