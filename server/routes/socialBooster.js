@@ -697,6 +697,9 @@ router.get('/my-orders', userMiddleware, async (req, res) => {
             const startCount = Number(resellerData.start_count ?? resellerData.startCount);
             if (Number.isFinite(startCount)) order.startCount = startCount;
 
+            const cidQuantity = Number(resellerData.quantity);
+            if (Number.isFinite(cidQuantity) && cidQuantity > 0) order.quantity = cidQuantity;
+
             const charge = Number(resellerData.charge);
             if (Number.isFinite(charge)) order.charge = charge;
 

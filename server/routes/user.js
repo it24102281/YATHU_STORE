@@ -215,6 +215,8 @@ router.get('/orders', userMiddleware, async (req, res) => {
             if (nextCharge !== null) order.charge = nextCharge;
             if (nextStartCount !== null) order.startCount = nextStartCount;
             if (nextRemains !== null) order.remains = nextRemains;
+            const nextQuantity = toFiniteNumber(statusDetails.quantity);
+            if (nextQuantity !== null && nextQuantity > 0) order.quantity = nextQuantity;
             order.apiError = '';
             await order.save();
 
