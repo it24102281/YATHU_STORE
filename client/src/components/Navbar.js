@@ -665,12 +665,31 @@ const Navbar = () => {
       {/* Mobile Navigation */}
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="lg:hidden absolute left-0 right-0 top-full bg-[#08080c]/98 backdrop-blur-3xl border-b border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] px-6 py-5 z-[9999]"
+          <>
+            {/* Full-screen backdrop overlay with instant blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="lg:hidden fixed inset-0 z-[9998]"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
+              onClick={() => setIsMenuOpen(false)}
+            />
+            {/* Menu panel */}
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="lg:hidden absolute left-0 right-0 top-full border-b border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] px-6 py-5 z-[9999]"
+              style={{
+                backgroundColor: 'rgba(8, 8, 12, 0.98)',
+              }}
           >
             <div className="space-y-1">
               {navLinks.map((link) => (
@@ -763,6 +782,7 @@ const Navbar = () => {
               </div>
             </div>
           </motion.div>
+          </>
         )}
       </AnimatePresence>
       <WalletTopUpModal
