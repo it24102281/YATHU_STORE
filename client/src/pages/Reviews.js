@@ -5,42 +5,42 @@ import { Star, MessageSquare, Quote } from 'lucide-react';
 const Reviews = () => {
   const reviews = [
     {
-      name: 'Alex Chen',
+      name: 'San Haranyan',
       rank: 'Ace Master',
       message: 'Best PUBG accounts seller. Fast delivery! All skins were exactly as described. Finally got my Glacier M416!',
       rating: 5,
       date: '2 days ago'
     },
     {
-      name: 'Sarah Johnson',
+      name: 'Mithulashan',
       rank: 'Diamond V',
       message: 'Very trustworthy seller. The account transfer was smooth and support was helpful with the email binding process.',
       rating: 5,
       date: '1 week ago'
     },
     {
-      name: 'Mike Wilson',
+      name: 'Rajanayakam Lathujan',
       rank: 'Platinum II',
       message: 'High quality PUBG IDs with rare skins. Got my dream mythic set at a great price. Highly recommended!',
       rating: 5,
       date: '2 weeks ago'
     },
     {
-      name: 'Rahul Sharma',
+      name: 'Supun Thilaka',
       rank: 'Ace Dominator',
       message: 'Excellent service. The response time was very fast. 100% genuine accounts here.',
       rating: 5,
       date: '3 weeks ago'
     },
     {
-      name: 'John Doe',
+      name: 'Kavindu Perera',
       rank: 'Gold I',
       message: 'Bought a level 70 account with many lab weapons. Everything works perfectly. Thanks Yathu!',
       rating: 4,
       date: '1 month ago'
     },
     {
-      name: 'Emma Watson',
+      name: 'Dinesh Kumara',
       rank: 'Crown III',
       message: 'Safe and secure. I was worried at first but the team was very professional. Happy with my purchase.',
       rating: 5,

@@ -6,7 +6,7 @@ const SoldProofs = () => {
   const soldProofs = [
     {
       id: 1,
-      customerName: 'Alex Chen',
+      customerName: 'San Haranyan',
       accountType: 'Ace Master',
       price: '$250',
       date: '2024-01-15',
@@ -17,7 +17,7 @@ const SoldProofs = () => {
     },
     {
       id: 2,
-      customerName: 'Sarah Johnson',
+      customerName: 'Mithulashan',
       accountType: 'Conqueror',
       price: '$450',
       date: '2024-01-12',
@@ -28,7 +28,7 @@ const SoldProofs = () => {
     },
     {
       id: 3,
-      customerName: 'Mike Wilson',
+      customerName: 'Rajanayakam Lathujan',
       accountType: 'Diamond',
       price: '$180',
       date: '2024-01-10',
@@ -39,7 +39,7 @@ const SoldProofs = () => {
     },
     {
       id: 4,
-      customerName: 'Emma Davis',
+      customerName: 'Supun Thilaka',
       accountType: 'Platinum',
       price: '$120',
       date: '2024-01-08',
@@ -50,7 +50,7 @@ const SoldProofs = () => {
     },
     {
       id: 5,
-      customerName: 'James Lee',
+      customerName: 'Kavindu Perera',
       accountType: 'Ace',
       price: '$200',
       date: '2024-01-05',
@@ -61,7 +61,7 @@ const SoldProofs = () => {
     },
     {
       id: 6,
-      customerName: 'Lisa Brown',
+      customerName: 'Dinesh Kumara',
       accountType: 'Crown',
       price: '$350',
       date: '2024-01-03',

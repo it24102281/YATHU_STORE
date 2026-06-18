@@ -484,9 +484,9 @@ const Home = () => {
   ];
 
   const reviews = [
-    { name: 'Alex Chen', rank: 'Ace Master', msg: 'Best PUBG accounts seller. Fast delivery and all skins were exactly as described. Highly recommend!', rating: 5, initials: 'AC', color: '#8b5cf6' },
-    { name: 'Sarah Johnson', rank: 'Diamond Tier', msg: 'Very trustworthy seller. The account transfer was smooth and customer support was incredibly helpful.', rating: 5, initials: 'SJ', color: '#a855f7' },
-    { name: 'Mike Wilson', rank: 'Platinum Tier', msg: 'High quality PUBG IDs with rare skins. Got my Glacier M416 and mythic set. 100% legit!', rating: 5, initials: 'MW', color: '#c084fc' },
+    { name: 'San Haranyan', rank: 'Ace Master', msg: 'Best PUBG accounts seller. Fast delivery and all skins were exactly as described. Highly recommend!', rating: 5, initials: 'SH', color: '#8b5cf6' },
+    { name: 'Mithulashan', rank: 'Diamond Tier', msg: 'Very trustworthy seller. The account transfer was smooth and customer support was incredibly helpful.', rating: 5, initials: 'M', color: '#a855f7' },
+    { name: 'Rajanayakam Lathujan', rank: 'Platinum Tier', msg: 'High quality PUBG IDs with rare skins. Got my Glacier M416 and mythic set. 100% legit!', rating: 5, initials: 'RL', color: '#c084fc' },
   ];
 
   const trustPoints = [
