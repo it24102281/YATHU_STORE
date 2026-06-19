@@ -133,7 +133,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'Total Revenue',
-      value: `$${stats.totalRevenue}`,
+      value: `LKR ${stats.totalRevenue}`,
       icon: DollarSign,
       color: 'from-green-600 to-green-700',
       bg: 'bg-green-500/10'

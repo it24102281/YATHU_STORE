@@ -18,7 +18,6 @@ import { useAuth } from '../../context/AuthContext';
 const CATEGORY_OPTIONS = [
   'PUBG Services',
   'Premium Subscriptions',
-  'Social Media Boosters',
 ];
 
 const STOCK_OPTIONS = [

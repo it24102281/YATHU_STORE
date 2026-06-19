@@ -7,7 +7,6 @@ const CATEGORY_OPTIONS = [
   'All',
   'PUBG Services',
   'Premium Subscriptions',
-  'Social Media Boosters',
 ];
 
 const stockLabels = {

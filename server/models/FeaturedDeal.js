@@ -11,7 +11,7 @@ const featuredDealSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, 'Category is required'],
-      enum: ['PUBG Services', 'Premium Subscriptions', 'Social Media Boosters'],
+      enum: ['PUBG Services', 'Premium Subscriptions'],
     },
     subCategory: {
       type: String,
